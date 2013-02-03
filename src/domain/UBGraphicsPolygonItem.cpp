@@ -1,17 +1,24 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 #include "UBGraphicsPolygonItem.h"
 
@@ -60,6 +67,13 @@ UBGraphicsPolygonItem::UBGraphicsPolygonItem (const QLineF& pLine, qreal pWidth)
 void UBGraphicsPolygonItem::initialize()
 {
     setData(UBGraphicsItemData::itemLayerType, QVariant(itemLayerType::DrawingItem)); //Necessary to set if we want z value to be assigned correctly
+    setUuid(QUuid::createUuid());
+}
+
+void UBGraphicsPolygonItem::setUuid(const QUuid &pUuid)
+{
+    UBItem::setUuid(pUuid);
+    setData(UBGraphicsItemData::ItemUuid, QVariant(pUuid)); //store item uuid inside the QGraphicsItem to fast operations with Items on the scene
 }
 
 void UBGraphicsPolygonItem::clearStroke()
@@ -142,14 +156,14 @@ QColor UBGraphicsPolygonItem::color() const
 
 
 UBItem* UBGraphicsPolygonItem::deepCopy() const
-{
-    UBGraphicsPolygonItem* copy = new UBGraphicsPolygonItem(polygon(), parentItem());
+{  
+    UBGraphicsPolygonItem* copy = new UBGraphicsPolygonItem(polygon(), 0);
 
+    UBGraphicsStroke *stroke = new UBGraphicsStroke();
+    
     copyItemParameters(copy);
 
-    copy->mOriginalLine = this->mOriginalLine;
-    copy->mOriginalWidth = this->mOriginalWidth;
-    copy->mIsNominalLine = this->mIsNominalLine;
+    copy->setStroke(stroke);
 
     return copy;
 }
@@ -160,19 +174,18 @@ void UBGraphicsPolygonItem::copyItemParameters(UBItem *copy) const
     UBGraphicsPolygonItem *cp = dynamic_cast<UBGraphicsPolygonItem*>(copy);
     if (cp)
     {
-        cp->mOriginalLine = QLineF();
-        cp->mOriginalWidth = -1;
-        cp->mIsNominalLine = false;
+        cp->mOriginalLine = this->mOriginalLine;
+        cp->mOriginalWidth = this->mOriginalWidth;
+        cp->mIsNominalLine = this->mIsNominalLine;
 
-        cp->setStroke(this->stroke());
-        cp->setStrokesGroup(this->strokesGroup());
+        cp->setTransform(transform());
         cp->setBrush(this->brush());
         cp->setPen(this->pen());
         cp->mHasAlpha = this->mHasAlpha;
 
-
         cp->setColorOnDarkBackground(this->colorOnDarkBackground());
         cp->setColorOnLightBackground(this->colorOnLightBackground());
+        //cp->setTransform(transform());
 
         cp->setData(UBGraphicsItemData::ItemLayerType, this->data(UBGraphicsItemData::ItemLayerType));
     }

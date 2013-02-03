@@ -1,17 +1,24 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 #include "UBGraphicsGroupContainerItem.h"
 #include "UBGraphicsMediaItem.h"
@@ -72,7 +79,12 @@ UBGraphicsMediaItem::UBGraphicsMediaItem(const QUrl& pMediaFileUrl, QGraphicsIte
     update();
 
     mMediaObject = new Phonon::MediaObject(this);
-    if (pMediaFileUrl.toLocalFile().contains("videos")) 
+
+    QString mediaPath = pMediaFileUrl.toString();
+    if ("" == mediaPath)
+        mediaPath = pMediaFileUrl.toLocalFile();
+
+    if (mediaPath.toLower().contains("videos")) 
     {
         mMediaType = mediaType_Video;
 
@@ -87,11 +99,10 @@ UBGraphicsMediaItem::UBGraphicsMediaItem(const QUrl& pMediaFileUrl, QGraphicsIte
 
         mVideoWidget->setMinimumSize(140,26);
 
-        setWidget(mVideoWidget);
         haveLinkedImage = true;
     }
     else    
-    if (pMediaFileUrl.toLocalFile().contains("audios"))
+    if (mediaPath.toLower().contains("audios"))
     {
         mMediaType = mediaType_Audio;
         mAudioOutput = new Phonon::AudioOutput(Phonon::MusicCategory, this);
@@ -107,7 +118,7 @@ UBGraphicsMediaItem::UBGraphicsMediaItem(const QUrl& pMediaFileUrl, QGraphicsIte
 
         mAudioWidget->resize(320,26+3*borderSize);
         mAudioWidget->setMinimumSize(150,26+borderSize);
-        setWidget(mAudioWidget);
+
         haveLinkedImage = false;
     }
 
@@ -116,18 +127,27 @@ UBGraphicsMediaItem::UBGraphicsMediaItem(const QUrl& pMediaFileUrl, QGraphicsIte
     mSource = Phonon::MediaSource(pMediaFileUrl);
     mMediaObject->setCurrentSource(mSource);
 
-    UBGraphicsMediaItemDelegate* itemDelegate = new UBGraphicsMediaItemDelegate(this, mMediaObject);
-    itemDelegate->init();
-    setDelegate(itemDelegate);
+    // we should create delegate after media objects because delegate uses his properties at creation.
+    setDelegate(new UBGraphicsMediaItemDelegate(this, mMediaObject));
+    
+    // delegate should be created earler because we setWidget calls resize event for graphics proxy widgt.
+    // resize uses delegate.
+    if (mediaType_Video == mMediaType)
+        setWidget(mVideoWidget);
+    else
+        setWidget(mAudioWidget);
+
+    // media widget should be created and placed on proxy widget here.
+    Delegate()->init();
 
     if (mediaType_Audio == mMediaType)
-        mDelegate->frame()->setOperationMode(UBGraphicsDelegateFrame::ResizingHorizontally);
+        Delegate()->frame()->setOperationMode(UBGraphicsDelegateFrame::ResizingHorizontally);
     else
-        mDelegate->frame()->setOperationMode(UBGraphicsDelegateFrame::Resizing);
+        Delegate()->frame()->setOperationMode(UBGraphicsDelegateFrame::Resizing);
 
     setData(UBGraphicsItemData::itemLayerType, QVariant(itemLayerType::ObjectItem)); //Necessary to set if we want z value to be assigned correctly
 
-    connect(mDelegate, SIGNAL(showOnDisplayChanged(bool)), this, SLOT(showOnDisplayChanged(bool)));
+    connect(Delegate(), SIGNAL(showOnDisplayChanged(bool)), this, SLOT(showOnDisplayChanged(bool)));
     connect(mMediaObject, SIGNAL(hasVideoChanged(bool)), this, SLOT(hasMediaChanged(bool)));
 }
 
@@ -220,7 +240,7 @@ void UBGraphicsMediaItem::hasMediaChanged(bool hasMedia)
     {
     Q_UNUSED(hasMedia);
     mMediaObject->seek(mInitialPos);
-        UBGraphicsMediaItemDelegate *med = dynamic_cast<UBGraphicsMediaItemDelegate *>(mDelegate);
+        UBGraphicsMediaItemDelegate *med = dynamic_cast<UBGraphicsMediaItemDelegate *>(Delegate());
         if (med)
             med->updateTicker(initialPos());
     }
@@ -289,9 +309,9 @@ void UBGraphicsMediaItem::copyItemParameters(UBItem *copy) const
 
 void UBGraphicsMediaItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-    if (mDelegate)
+    if (Delegate())
     {
-        mDelegate->mousePressEvent(event);
+        Delegate()->mousePressEvent(event);
         if (parentItem() && UBGraphicsGroupContainerItem::Type == parentItem()->type())
         {
             UBGraphicsGroupContainerItem *group = qgraphicsitem_cast<UBGraphicsGroupContainerItem*>(parentItem());
@@ -304,7 +324,7 @@ void UBGraphicsMediaItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
                 }   
                 group->setCurrentItem(this);
                 this->setSelected(true);
-                mDelegate->positionHandles();
+                Delegate()->positionHandles();
             }       
 
         }
@@ -351,3 +371,4 @@ void UBGraphicsMediaItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     event->accept();
 
 }
+

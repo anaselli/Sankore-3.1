@@ -1,16 +1,22 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
@@ -66,15 +72,15 @@ UBDocumentManager::UBDocumentManager(QObject *parent)
     QString dummyWidgets = tr("widgets");
 
     UBExportCFF* cffExporter = new UBExportCFF(this);
-    mExportAdaptors.append(cffExporter);
     UBExportFullPDF* exportFullPdf = new UBExportFullPDF(this);
-    mExportAdaptors.append(exportFullPdf);
     UBExportDocument* exportDocument = new UBExportDocument(this);
+    UBWebPublisher* webPublished = new UBWebPublisher(this);
     mExportAdaptors.append(exportDocument);
+    mExportAdaptors.append(webPublished);
+    mExportAdaptors.append(exportFullPdf);
+    mExportAdaptors.append(cffExporter);
 //     UBExportWeb* exportWeb = new UBExportWeb(this);
 //     mExportAdaptors.append(exportWeb);
-    UBWebPublisher* webPublished = new UBWebPublisher(this);
-    mExportAdaptors.append(webPublished);
 
     UBImportDocument* documentImport = new UBImportDocument(this);
     mImportAdaptors.append(documentImport);
@@ -170,6 +176,10 @@ UBDocumentProxy* UBDocumentManager::importFile(const QFile& pFile, const QString
                 foreach(UBGraphicsItem* page, pages)
                 {
                     UBApplication::showMessage(tr("Inserting page %1 of %2").arg(++nPage).arg(pages.size()), true);
+#ifdef Q_WS_MACX
+                    //Workaround for issue 912
+                    QApplication::processEvents();
+#endif
                     int pageIndex = document->pageCount();
                     UBGraphicsScene* scene = UBPersistenceManager::persistenceManager()->createDocumentSceneAt(document, pageIndex);
                     importAdaptor->placeImportedItemToScene(scene, page);
@@ -194,7 +204,7 @@ int UBDocumentManager::addFilesToDocument(UBDocumentProxy* document, QStringList
     int nImportedDocuments = 0;
     foreach(const QString& fileName, fileNames)
     {
-        UBApplication::showMessage(tr("Importing file").arg(fileName));
+        UBApplication::showMessage(tr("Importing file %1").arg(fileName));
 
         QFile file(fileName);
         QFileInfo fileInfo(file);

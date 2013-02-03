@@ -1,17 +1,24 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This prograscenem is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 #ifndef UBGRAPHICSITEMDELEGATE_H_
 #define UBGRAPHICSITEMDELEGATE_H_
@@ -50,6 +57,9 @@ class DelegateButton: public QGraphicsSvgItem
 
         void setFileName(const QString & fileName);
 
+        void setShowProgressIndicator(bool pShow) {mShowProgressIndicator = pShow;}
+        bool testShowProgresIndicator() const {return mShowProgressIndicator;}
+
         void setSection(Qt::WindowFrameSection section) {mButtonAlignmentSection =  section;}
         Qt::WindowFrameSection getSection() const {return mButtonAlignmentSection;}
 
@@ -57,8 +67,13 @@ class DelegateButton: public QGraphicsSvgItem
 
         virtual void mousePressEvent(QGraphicsSceneMouseEvent *event);
         virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
+        virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
+        void timerEvent(QTimerEvent *event);
 
         void modified();
+
+private slots:
+        void startShowProgress();
 
     private:
 
@@ -66,6 +81,10 @@ class DelegateButton: public QGraphicsSvgItem
 
         QTime mPressedTime;
         bool mIsTransparentToMouseEvent;
+        bool mIsPressed;
+        int mProgressTimerId;
+        int mPressProgres;
+        bool mShowProgressIndicator;
         Qt::WindowFrameSection mButtonAlignmentSection;
 
     signals:
@@ -195,7 +214,7 @@ class UBGraphicsItemDelegate : public QObject
     Q_OBJECT
 
     public:
-        UBGraphicsItemDelegate(QGraphicsItem* pDelegated, QObject * parent = 0,  bool respectRatio = true, bool canRotate = false, bool useToolBar = true);
+        UBGraphicsItemDelegate(QGraphicsItem* pDelegated, QObject * parent = 0,  bool respectRatio = true, bool canRotate = false, bool useToolBar = true, bool showGoContentButton = false);
 
         virtual ~UBGraphicsItemDelegate();
 
@@ -244,6 +263,7 @@ class UBGraphicsItemDelegate : public QObject
         UBGraphicsToolBarItem* getToolBarItem() const { return mToolBarItem; }
 
         qreal antiScaleRatio() const { return mAntiScaleRatio; }
+        virtual void update() {positionHandles();}
 
     signals:
         void showOnDisplayChanged(bool shown);
@@ -295,7 +315,7 @@ class UBGraphicsItemDelegate : public QObject
         UBGraphicsToolBarItem* mToolBarItem;
 
 protected slots:
-        virtual void gotoContentSource(bool checked);
+        virtual void gotoContentSource();
 
 private:
         void updateFrame();
@@ -317,6 +337,8 @@ private:
         /** A boolean saying that this object can be flippable (mirror effect) */
         bool mFlippable;
         bool mToolBarUsed;
+
+        bool mShowGoContentButton;
 };
 
 

@@ -1,3 +1,25 @@
+/*
+ * Copyright (C) 2012 Webdoc SA
+ *
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
 #ifndef UBFEATURESWIDGET_H
 #define UBFEATURESWIDGET_H
 
@@ -79,7 +101,7 @@ signals:
     void sendFileNameList(const QStringList lst);
 
 private slots:
-    void onPreviewLoaded(int id, bool pSuccess, QUrl sourceUrl, QString pContentTypeHeader, QByteArray pData, QPointF pPos, QSize pSize, bool isBackground);
+    void onPreviewLoaded(int id, bool pSuccess, QUrl sourceUrl, QUrl originalUrl, QString pContentTypeHeader, QByteArray pData, QPointF pPos, QSize pSize, bool isBackground);
     void currentSelected( const QModelIndex & );
     void searchStarted( const QString & );
     void createNewFolder();
@@ -87,7 +109,7 @@ private slots:
     void addToFavorite( const UBFeaturesMimeData  *);
     void removeFromFavorite( const UBFeaturesMimeData * );
     void onDisplayMetadata( QMap<QString,QString> );
-    void onAddDownloadedFileToLibrary(bool, QUrl, QString, QByteArray);
+    void onAddDownloadedFileToLibrary(bool, QUrl, QString, QByteArray, QString pTitle);
     void addElementsToFavorite();
     void removeElementsFromFavorite();
     void deleteSelectedElements();
@@ -154,7 +176,7 @@ public:
 
 private:
     UBFeaturesListView *mListView;
-    QSlider *mListSlder;
+    QSlider *mListSlider;
 
 };
 
@@ -193,9 +215,9 @@ public:
     void setLockedExcludingAdditional(bool pLock);
 
     QStackedWidget *mStackedWidget;
-        UBFeaturesNavigatorWidget *mNavigator;
-        UBFeatureProperties *mFeatureProperties;
-        UBFeaturesWebView *webView;
+    UBFeaturesNavigatorWidget *mNavigator;
+    UBFeatureProperties *mFeatureProperties;
+    UBFeaturesWebView *webView;
 
     QStackedWidget *mAdditionalDataContainer;
 
@@ -226,10 +248,6 @@ class UBFeaturesNewFolderDialog : public QWidget
     Q_OBJECT
 
 public:
-    static const QString acceptText;
-    static const QString cancelText;
-    static const QString labelText;
-
     UBFeaturesNewFolderDialog(QWidget *parent = 0);
     void setRegexp(const QRegExp pRegExp);
     bool validString(const QString &pStr);
@@ -249,7 +267,9 @@ private:
     QRegExpValidator *mValidator;
     QStringList mFileNameList;
     QPushButton *acceptButton;
-
+    const QString acceptText;
+    const QString cancelText;
+    const QString labelText;
 };
 
 class UBFeaturesProgressInfo: public QWidget {

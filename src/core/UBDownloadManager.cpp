@@ -1,24 +1,98 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+
 #include "UBDownloadManager.h"
 #include "core/UBApplication.h"
+#include "core/UBPersistenceManager.h"
 #include "gui/UBMainWindow.h"
 #include "board/UBBoardController.h"
 #include "board/UBBoardPaletteManager.h"
+#include "frameworks/UBFileSystemUtils.h"
 
 #include "core/memcheck.h"
+
+
+UBAsyncLocalFileDownloader::UBAsyncLocalFileDownloader(sDownloadFileDesc desc, QObject *parent)
+: QThread(parent)
+, mDesc(desc)
+, m_bAborting(false)
+{
+
+}
+
+UBAsyncLocalFileDownloader *UBAsyncLocalFileDownloader::download()
+{
+    start();
+    return this;
+}
+
+void UBAsyncLocalFileDownloader::run()
+{
+
+    if(mDesc.srcUrl.startsWith("file://"))
+        mDesc.srcUrl = QUrl(mDesc.srcUrl).toLocalFile();
+    else
+        mDesc.srcUrl = QUrl::fromLocalFile(mDesc.srcUrl).toLocalFile();
+
+    QString mimeType = UBFileSystemUtils::mimeTypeFromFileName(mDesc.srcUrl);
+
+    int position=mimeType.indexOf(";");
+    if(position != -1)
+        mimeType=mimeType.left(position);
+
+    UBMimeType::Enum itemMimeType = UBFileSystemUtils::mimeTypeFromString(mimeType);
+
+
+    QString destDirectory;
+    if (UBMimeType::Video == itemMimeType)
+        destDirectory = UBPersistenceManager::videoDirectory;
+    else 
+        if (UBMimeType::Audio == itemMimeType)
+            destDirectory = UBPersistenceManager::audioDirectory;
+
+    if (mDesc.originalSrcUrl.isEmpty())
+        mDesc.originalSrcUrl = mDesc.srcUrl;
+
+    QString uuid = QUuid::createUuid();
+    UBPersistenceManager::persistenceManager()->addFileToDocument(UBApplication::boardController->selectedDocument(), 
+        mDesc.srcUrl,
+        destDirectory,
+        uuid,
+        mTo,
+        NULL);
+
+    if (m_bAborting)
+    {
+        if (QFile::exists(mTo))
+            QFile::remove(mTo);
+    }
+    else
+        emit signal_asyncCopyFinished(mDesc.id, !mTo.isEmpty(), QUrl::fromLocalFile(mTo), QUrl(mDesc.originalSrcUrl), "", NULL, mDesc.pos, mDesc.size, mDesc.isBackground);
+}
+
+void UBAsyncLocalFileDownloader::abort()
+{
+    m_bAborting = true;
+}
 
 /** The unique instance of the download manager */
 static UBDownloadManager* pInstance = NULL;
@@ -100,7 +174,7 @@ void UBDownloadManager::init()
 {
     mCrntDL.clear();
     mPendingDL.clear();
-    mReplies.clear();
+    mDownloads.clear();
     mLastID = 1;
     mDLAvailability.clear();
     for(int i=0; i<SIMULTANEOUS_DOWNLOAD; i++)
@@ -193,7 +267,8 @@ void UBDownloadManager::onDownloadProgress(int id, qint64 received, qint64 total
  * \brief Called when the download of the given file is finished
  * @param desc as the current downloaded file description
  */
-void UBDownloadManager::onDownloadFinished(int id, bool pSuccess, QUrl sourceUrl, QString pContentTypeHeader, QByteArray pData, QPointF pPos, QSize pSize, bool isBackground)
+
+void UBDownloadManager::onDownloadFinished(int id, bool pSuccess, QUrl sourceUrl, QUrl contentUrl, QString pContentTypeHeader, QByteArray pData, QPointF pPos, QSize pSize, bool isBackground)
 {
 //    Temporary data for dnd do not delete it please
     Q_UNUSED(pPos)
@@ -209,13 +284,13 @@ void UBDownloadManager::onDownloadFinished(int id, bool pSuccess, QUrl sourceUrl
                 desc.contentTypeHeader = pContentTypeHeader;
                 emit downloadFinished(pSuccess, desc, pData);
 
-            } else if(desc.modal) {
+            } else if(desc.dest == sDownloadFileDesc::board) {
                 // The downloaded file is modal so we must put it on the board
-                emit addDownloadedFileToBoard(pSuccess, sourceUrl, pContentTypeHeader, pData, pPos, pSize, isBackground);
+                emit addDownloadedFileToBoard(pSuccess, sourceUrl, contentUrl, pContentTypeHeader, pData, pPos, pSize, isBackground);
             }
             else
             {
-                emit addDownloadedFileToLibrary(pSuccess, sourceUrl, pContentTypeHeader, pData);
+                emit addDownloadedFileToLibrary(pSuccess, sourceUrl, pContentTypeHeader, pData, desc.name);
             }
 
             break;
@@ -259,7 +334,7 @@ void UBDownloadManager::updateFileCurrentSize(int id, qint64 received, qint64 to
                 mCrntDL.remove(i);
 
                 // Here we don't forget to remove the reply related to the finished download
-                mReplies.remove(id);
+                mDownloads.remove(id);
 
                 // Free the download slot used by the finished file
                 for(int j=0; j<mDLAvailability.size();j++)
@@ -302,15 +377,28 @@ void UBDownloadManager::updateFileCurrentSize(int id, qint64 received, qint64 to
  */
 void UBDownloadManager::startFileDownload(sDownloadFileDesc desc)
 {
-    UBDownloadHttpFile* http = new UBDownloadHttpFile(desc.id, this);
-    connect(http, SIGNAL(downloadProgress(int, qint64,qint64)), this, SLOT(onDownloadProgress(int,qint64,qint64)));
-    connect(http, SIGNAL(downloadFinished(int, bool, QUrl, QString, QByteArray, QPointF, QSize, bool)), this, SLOT(onDownloadFinished(int, bool, QUrl, QString, QByteArray, QPointF, QSize, bool)));
-
-    //the desc.url is encoded. So we have to decode it before.
-    QUrl url;
-    url.setEncodedUrl(desc.url.toUtf8());
-    // We send here the request and store its reply in order to be able to cancel it if needed
-    mReplies[desc.id] = http->get(url, desc.pos, desc.size, desc.isBackground);
+    if (desc.srcUrl.startsWith("file://") || desc.srcUrl.startsWith("/"))
+    {
+        UBAsyncLocalFileDownloader * cpHelper = new UBAsyncLocalFileDownloader(desc, this);
+        connect(cpHelper, SIGNAL(signal_asyncCopyFinished(int, bool, QUrl, QUrl, QString, QByteArray, QPointF, QSize, bool)), this, SLOT(onDownloadFinished(int, bool, QUrl, QUrl,QString, QByteArray, QPointF, QSize, bool)));
+        QObject *res = dynamic_cast<QObject *>(cpHelper->download());
+        if (!res)
+            delete res;
+        else
+            mDownloads[desc.id] = res;
+    }
+    else
+    {    
+        UBDownloadHttpFile* http = new UBDownloadHttpFile(desc.id, this);
+        connect(http, SIGNAL(downloadProgress(int, qint64,qint64)), this, SLOT(onDownloadProgress(int,qint64,qint64)));
+        connect(http, SIGNAL(downloadFinished(int, bool, QUrl, QUrl, QString, QByteArray, QPointF, QSize, bool)), this, SLOT(onDownloadFinished(int, bool, QUrl, QUrl, QString, QByteArray, QPointF, QSize, bool)));
+    
+        //the desc.srcUrl is encoded. So we have to decode it before.
+        QUrl url;
+        url.setEncodedUrl(desc.srcUrl.toUtf8());
+        // We send here the request and store its reply in order to be able to cancel it if needed
+        mDownloads[desc.id] = dynamic_cast<QObject *>(http->get(url, desc.pos, desc.size, desc.isBackground));
+    } 
 }
 
 /**
@@ -356,10 +444,18 @@ void UBDownloadManager::checkIfModalRemains()
 void UBDownloadManager::cancelDownloads()
 {
     // Stop the current downloads
-    QMap<int, QNetworkReply*>::iterator it = mReplies.begin();
-    for(; it!=mReplies.end();it++)
+    QMap<int, QObject*>::iterator it = mDownloads.begin();
+    for(; it!=mDownloads.end();it++)
     {
-        dynamic_cast<QNetworkReply*>(it.value())->abort();
+        QNetworkReply *netReply = dynamic_cast<QNetworkReply*>(it.value());
+        if (netReply)
+            netReply->abort();
+        else
+        {        
+            UBAsyncLocalFileDownloader *localDownload = dynamic_cast<UBAsyncLocalFileDownloader *>(it.value());
+            if (localDownload)
+                localDownload->abort();
+        }
     }
 
     // Clear all the lists
@@ -372,7 +468,8 @@ void UBDownloadManager::cancelDownloads()
 
 void UBDownloadManager::onDownloadError(int id)
 {
-    QNetworkReply* pReply = mReplies.value(id);
+    QNetworkReply *pReply = dynamic_cast<QNetworkReply *>(mDownloads.value(id));
+    
     if(NULL != pReply)
     {
         // Check which error occured:
@@ -402,9 +499,25 @@ void UBDownloadManager::finishDownloads(bool cancel)
 
 void UBDownloadManager::cancelDownload(int id)
 {
+    if (!mDownloads.size())
+        return;
+   
     // Stop the download
-    mReplies[id]->abort();
-    mReplies.remove(id);
+
+    QNetworkReply *pNetworkDownload = dynamic_cast<QNetworkReply *>(mDownloads[id]);
+    if (pNetworkDownload)
+        pNetworkDownload->abort();
+    else
+    {
+        UBAsyncLocalFileDownloader *pLocalDownload = dynamic_cast<UBAsyncLocalFileDownloader *>(mDownloads[id]);
+        if (pLocalDownload)
+        {
+            if (pLocalDownload->isRunning())
+                pLocalDownload->abort();                          
+        }
+    }
+
+    mDownloads.remove(id);
 
     // Remove the canceled download from the download lists
     bool bFound = false;
@@ -494,7 +607,7 @@ void UBDownloadHttpFile::onDownloadFinished(bool pSuccess, QUrl sourceUrl, QStri
     if(pSuccess)
     {
         // Notify the end of the download
-        emit downloadFinished(mId, pSuccess, sourceUrl, pContentTypeHeader, pData, pPos, pSize, isBackground);
+        emit downloadFinished(mId, pSuccess, sourceUrl, sourceUrl, pContentTypeHeader, pData, pPos, pSize, isBackground);
     }
     else
     {

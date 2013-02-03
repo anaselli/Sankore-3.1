@@ -1,17 +1,25 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+
 #ifndef UBDOWNLOADMANAGER_H
 #define UBDOWNLOADMANAGER_H
 
@@ -52,7 +60,8 @@ struct sDownloadFileDesc
     int id;
     int totalSize;
     int currentSize;
-    QString url;
+    QString srcUrl;
+    QString originalSrcUrl;
     QString contentTypeHeader;
     bool modal;
     QPointF pos;        // For board drop only
@@ -75,7 +84,7 @@ public:
 
 signals:
     void downloadProgress(int id, qint64 current,qint64 total);
-    void downloadFinished(int id, bool pSuccess, QUrl sourceUrl, QString pContentTypeHeader, QByteArray pData, QPointF pPos, QSize pSize, bool isBackground);
+    void downloadFinished(int id, bool pSuccess, QUrl sourceUrl, QUrl contentUrl, QString pContentTypeHeader, QByteArray pData, QPointF pPos, QSize pSize, bool isBackground);
     void downloadError(int id);
 
 private slots:
@@ -84,6 +93,28 @@ private slots:
 
 private:
     int mId;
+};
+
+class UBAsyncLocalFileDownloader : public QThread
+{
+    Q_OBJECT
+public:
+    UBAsyncLocalFileDownloader(sDownloadFileDesc desc, QObject *parent = 0);
+
+    UBAsyncLocalFileDownloader *download();    
+    void run();
+    void abort();
+
+signals:
+    void finished(QString srcUrl, QString resUrl);
+    void signal_asyncCopyFinished(int id, bool pSuccess, QUrl sourceUrl, QUrl contentUrl, QString pContentTypeHeader, QByteArray pData, QPointF pPos, QSize pSize, bool isBackground);
+
+
+private:
+    sDownloadFileDesc mDesc;
+    bool m_bAborting;
+    QString mFrom;
+    QString mTo;
 };
 
 class UBDownloadManager : public QObject
@@ -108,15 +139,15 @@ signals:
     void downloadFinished(bool pSuccess, int id, QUrl sourceUrl, QString pContentTypeHeader, QByteArray pData);
     void downloadFinished(bool pSuccess, sDownloadFileDesc desc, QByteArray pData);
     void downloadModalFinished();
-    void addDownloadedFileToBoard(bool pSuccess, QUrl sourceUrl, QString pContentTypeHeader, QByteArray pData, QPointF pPos, QSize pSize, bool isBackground);
-    void addDownloadedFileToLibrary(bool pSuccess, QUrl sourceUrl, QString pContentTypeHeader, QByteArray pData);
+    void addDownloadedFileToBoard(bool pSuccess, QUrl sourceUrl, QUrl contentUrl, QString pContentTypeHeader, QByteArray pData, QPointF pPos, QSize pSize, bool isBackground);
+    void addDownloadedFileToLibrary(bool pSuccess, QUrl sourceUrl, QString pContentTypeHeader, QByteArray pData, QString pTitle);
     void cancelAllDownloads();
     void allDownloadsFinished();
 
 private slots:
     void onUpdateDownloadLists();
     void onDownloadProgress(int id, qint64 received, qint64 total);
-    void onDownloadFinished(int id, bool pSuccess, QUrl sourceUrl, QString pContentTypeHeader, QByteArray pData, QPointF pPos, QSize pSize, bool isBackground);
+    void onDownloadFinished(int id, bool pSuccess, QUrl sourceUrl, QUrl contentUrl, QString pContentTypeHeader, QByteArray pData, QPointF pPos, QSize pSize, bool isBackground);
     void onDownloadError(int id);
 
 private:
@@ -138,7 +169,7 @@ private:
     /** The current download availability (-1 = free, otherwise the file ID is recorded)*/
     QVector<int> mDLAvailability;
     /** A map containing the replies of the GET operations */
-    QMap<int, QNetworkReply*> mReplies;
+    QMap<int, QObject*> mDownloads;
 };
 
 #endif // UBDOWNLOADMANAGER_H

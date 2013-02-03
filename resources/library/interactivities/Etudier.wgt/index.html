@@ -4,13 +4,14 @@
         <title>D'n'd</title>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
         <link rel="stylesheet" type="text/css" href="css/basic.css"/>
-        <link rel="stylesheet" href="css/fonts/Lobster/stylesheet.css">
-	<link rel="stylesheet" href="css/fonts/SF-Toontime/stylesheet.css">
         <script type="text/javascript" src="js/jquery-1.6.2.min.js"></script>
         <script type="text/javascript" src="js/jquery-ui-1.8.9.custom.min.js"></script>
         <script type="text/javascript" src="js/easySlider1.5.js"></script>
         <script type="text/javascript" src="js/script.js"></script>
         <script type="text/javascript">
+            if (parent && parent.loaded)
+                parent.loaded();
+
             $(document).ready(function(){
                 var lang = ""; //locale language
                 if(window.sankore){
@@ -52,11 +53,6 @@
                     <div id="wgt_help"></div>                    
                     <div id="wgt_display" class="selected"></div>
                     <div id="wgt_edit"></div>
-                    <select class="style_select">
-                        <option value="1"></option>
-                        <option value="2"></option>
-                        <option value="3"></option>
-                    </select>
                 </td>
                 <td class="b_top_right">&nbsp;</td>
             </tr>
@@ -66,6 +62,17 @@
                 <td>
                     <div id="help"></div>
                     <div id="slider">
+                        <div id="parameters">
+                            <div class="inline">
+                                <label>
+                                    <select id="style_select">
+                                        <option value="1"></option>
+                                        <option value="2"></option>
+                                        <option value="3"></option>
+                                    </select>
+                                </label>
+                            </div>
+                        </div>
                         <ul>							
                         </ul>
                     </div>

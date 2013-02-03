@@ -1,17 +1,25 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+
 #include <QList>
 #include <QPointF>
 #include <QPixmap>
@@ -69,6 +77,9 @@ UBDocumentNavigator::~UBDocumentNavigator()
     }
 }
 
+#include "gui/UBDockTeacherGuideWidget.h"
+#include "gui/UBTeacherGuideWidget.h"
+
 /**
  * \brief Generate the thumbnails
  */
@@ -80,14 +91,18 @@ void UBDocumentNavigator::generateThumbnails(UBDocumentContainer* source)
     {
         mScene->removeItem(it);
         delete it;
+        it = NULL;
     }
 
     for(int i = 0; i < source->selectedDocument()->pageCount(); i++)
     {
-    	const QPixmap* pix = source->pageAt(i);
-        UBSceneThumbnailNavigPixmap* pixmapItem = new UBSceneThumbnailNavigPixmap(*pix, source->selectedDocument(), i);
+        const QPixmap* pix = source->pageAt(i);
+        Q_ASSERT(!pix->isNull());
         int pageIndex = UBDocumentContainer::pageFromSceneIndex(i);
-        QString label = pageIndex == 0 ? tr("Title page") :  tr("Page %0").arg(pageIndex);
+
+        UBSceneThumbnailNavigPixmap* pixmapItem = new UBSceneThumbnailNavigPixmap(*pix, source->selectedDocument(), i);
+
+        QString label = pageIndex == 0 ? tr("Title page") : tr("Page %0").arg(pageIndex);
         UBThumbnailTextItem *labelItem = new UBThumbnailTextItem(label);
 
 		UBImgTextThumbnailElement thumbWithText(pixmapItem, labelItem);
@@ -104,7 +119,6 @@ void UBDocumentNavigator::generateThumbnails(UBDocumentContainer* source)
 
 void UBDocumentNavigator::onScrollToSelectedPage(int index)
 {
-    qDebug() << "Selection in widet: " << index;
     int c  = 0;
     foreach(UBImgTextThumbnailElement el, mThumbsWithLabels)
     {
@@ -118,7 +132,6 @@ void UBDocumentNavigator::onScrollToSelectedPage(int index)
         }
         c++;
     }
-//    centerOn(mThumbsWithLabels[index].getThumbnail());
 }
 
 /**
@@ -131,8 +144,7 @@ void UBDocumentNavigator::updateSpecificThumbnail(int iPage)
     //UBGraphicsScene* pScene = UBApplication::boardController->activeScene();
 
     const QPixmap* pix = UBApplication::boardController->pageAt(iPage);
-    UBSceneThumbnailNavigPixmap* newItem = new UBSceneThumbnailNavigPixmap(*pix, 
-        UBApplication::boardController->selectedDocument(), iPage);
+    UBSceneThumbnailNavigPixmap* newItem = new UBSceneThumbnailNavigPixmap(*pix, UBApplication::boardController->selectedDocument(), iPage);
 
     // Get the old thumbnail
     UBSceneThumbnailNavigPixmap* oldItem = mThumbsWithLabels.at(iPage).getThumbnail();
@@ -142,6 +154,7 @@ void UBDocumentNavigator::updateSpecificThumbnail(int iPage)
         mScene->addItem(newItem);
         mThumbsWithLabels[iPage].setThumbnail(newItem);
         delete oldItem;
+        oldItem = NULL;
     }
 
 }
@@ -264,7 +277,6 @@ void UBDocumentNavigator::mousePressEvent(QMouseEvent *event)
                 break;
             }
         }
-        qDebug() << "Selected Scene: " << index;
         UBApplication::boardController->setActiveDocumentScene(index);
 	}
 	QGraphicsView::mousePressEvent(event);

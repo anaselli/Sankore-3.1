@@ -1,17 +1,24 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 #include "UBExportFullPDF.h"
 
@@ -169,6 +176,7 @@ void UBExportFullPDF::persistsDocument(UBDocumentProxy* pDocumentProxy, const QS
             MergeDescription mergeInfo;
 
             int existingPageCount = pDocumentProxy->pageCount();
+
             for(int pageIndex = 0 ; pageIndex < existingPageCount; pageIndex++)
             {
                 UBGraphicsScene* scene = UBPersistenceManager::persistenceManager()->loadDocumentScene(pDocumentProxy, pageIndex);
@@ -180,18 +188,42 @@ void UBExportFullPDF::persistsDocument(UBDocumentProxy* pDocumentProxy, const QS
                 {
                     QString pdfName = UBPersistenceManager::objectDirectory + "/" + pdfItem->fileUuid().toString() + ".pdf";
                     QString backgroundPath = pDocumentProxy->persistencePath() + "/" + pdfName;
+                    QRectF annotationsRect = scene->itemsBoundingRect();
 
-                    qDebug() << "scene->itemsBoundingRect()" << scene->itemsBoundingRect();
-                    qDebug() << "pdfItem->boundingRect()" << pdfItem->boundingRect();
-                    qDebug() << "pdfItem->sceneBoundingRect()" << pdfItem->sceneBoundingRect();
+                    // Original datas
+                    double xAnnotation = qRound(annotationsRect.x());
+                    double yAnnotation = qRound(annotationsRect.y());
+                    double xPdf = qRound(pdfItem->sceneBoundingRect().x());
+                    double yPdf = qRound(pdfItem->sceneBoundingRect().y());
+                    double hPdf = qRound(pdfItem->sceneBoundingRect().height());
+
+                    // Exportation-transformed datas
+                    double hScaleFactor = pageSize.width()/scene->itemsBoundingRect().width();
+                    double vScaleFactor = pageSize.height()/scene->itemsBoundingRect().height();
+                    double scaleFactor = qMin(hScaleFactor, vScaleFactor);
+
+                    double xAnnotationsOffset = 0;
+                    double yAnnotationsOffset = 0;
+                    double hPdfTransformed = qRound(hPdf * scaleFactor);
+
+                    // Here, we force the PDF page to be on the topleft corner of the page
+                    double xPdfOffset = 0;
+                    double yPdfOffset = (hPdf - hPdfTransformed) * mScaleFactor;
+
+                    // Now we align the items
+                    xPdfOffset += (xPdf - xAnnotation) * scaleFactor * mScaleFactor;
+                    yPdfOffset -= (yPdf - yAnnotation) * scaleFactor * mScaleFactor;
+
+                    TransformationDescription pdfTransform(xPdfOffset, yPdfOffset, scaleFactor, 0);
+                    TransformationDescription annotationTransform(xAnnotationsOffset, yAnnotationsOffset, 1, 0);
 
                     MergePageDescription pageDescription(pageSize.width() * mScaleFactor,
                                                          pageSize.height() * mScaleFactor,
                                                          pdfItem->pageNumber(),
                                                          QFile::encodeName(backgroundPath).constData(),
-                                                         TransformationDescription(),
+                                                         pdfTransform,
                                                          pageIndex + 1,
-                                                         TransformationDescription(),
+                                                         annotationTransform,
                                                          false, false);
 
                     mergeInfo.push_back(pageDescription);

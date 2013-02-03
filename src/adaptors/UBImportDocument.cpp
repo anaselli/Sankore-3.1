@@ -1,17 +1,24 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 #include "UBImportDocument.h"
 #include "document/UBDocumentProxy.h"
@@ -56,7 +63,7 @@ QString UBImportDocument::importFileFilter()
 }
 
 
-QString UBImportDocument::expandFileToDir(const QFile& pZipFile, const QString& pDir)
+bool UBImportDocument::extractFileToDir(const QFile& pZipFile, const QString& pDir, QString& documentRoot)
 {
 
     QDir rootDir(pDir);
@@ -65,63 +72,45 @@ QString UBImportDocument::expandFileToDir(const QFile& pZipFile, const QString& 
     if(!zip.open(QuaZip::mdUnzip))
     {
         qWarning() << "Import failed. Cause zip.open(): " << zip.getZipError();
-        return "";
+        return false;
     }
 
     zip.setFileNameCodec("UTF-8");
     QuaZipFileInfo info;
     QuaZipFile file(&zip);
 
-    // TODO UB 4.x  implement a mechanism that can replace an existing
-    // document based on the UID of the document.
-    bool createNewDocument = true;
-    QString documentRootFolder;
-
-    // first we search the metadata.rdf to check the document properties
-    for(bool more = zip.goToFirstFile(); more; more = zip.goToNextFile())
-    {
-        if(!zip.getCurrentFileInfo(&info))
-        {
-            qWarning() << "Import failed. Cause: getCurrentFileInfo(): " << zip.getZipError();
-            return "";
-        }
-
-        QFileInfo currentFileInfo(pDir + "/" + file.getActualFileName());
-    }
-
-    if (createNewDocument)
-        documentRootFolder = UBPersistenceManager::persistenceManager()->generateUniqueDocumentPath();
-
-
     QFile out;
     char c;
+    documentRoot = UBPersistenceManager::persistenceManager()->generateUniqueDocumentPath(pDir);
     for(bool more=zip.goToFirstFile(); more; more=zip.goToNextFile())
     {
         if(!zip.getCurrentFileInfo(&info))
         {
             //TOD UB 4.3 O display error to user or use crash reporter
             qWarning() << "Import failed. Cause: getCurrentFileInfo(): " << zip.getZipError();
-            return "";
+            return false;
         }
 
         if(!file.open(QIODevice::ReadOnly))
         {
             qWarning() << "Import failed. Cause: file.open(): " << zip.getZipError();
-            return "";
+            return false;
         }
 
         if(file.getZipError()!= UNZ_OK)
         {
             qWarning() << "Import failed. Cause: file.getFileName(): " << zip.getZipError();
-            return "";
+            return false;
         }
 
-        QString newFileName = documentRootFolder + "/" + file.getActualFileName();
+        QString newFileName = documentRoot + "/" + file.getActualFileName();
         QFileInfo newFileInfo(newFileName);
-        rootDir.mkpath(newFileInfo.absolutePath());
+        if (!rootDir.mkpath(newFileInfo.absolutePath()))
+            return false;
 
         out.setFileName(newFileName);
-        out.open(QIODevice::WriteOnly);
+        if (!out.open(QIODevice::WriteOnly))
+            return false;
 
         // Slow like hell (on GNU/Linux at least), but it is not my fault.
         // Not ZIP/UNZIP package's fault either.
@@ -131,7 +120,7 @@ QString UBImportDocument::expandFileToDir(const QFile& pZipFile, const QString& 
         {
             qWarning() << "Import failed. Cause: Unable to write file";
             out.close();
-            return "";
+            return false;
         }
 
         while(file.getChar(&c))
@@ -142,13 +131,13 @@ QString UBImportDocument::expandFileToDir(const QFile& pZipFile, const QString& 
         if(file.getZipError()!=UNZ_OK)
         {
             qWarning() << "Import failed. Cause: " << zip.getZipError();
-            return "";
+            return false;
         }
 
         if(!file.atEnd())
         {
             qWarning() << "Import failed. Cause: read all but not EOF";
-            return "";
+            return false;
         }
 
         file.close();
@@ -156,7 +145,7 @@ QString UBImportDocument::expandFileToDir(const QFile& pZipFile, const QString& 
         if(file.getZipError()!=UNZ_OK)
         {
             qWarning() << "Import failed. Cause: file.close(): " <<  file.getZipError();
-            return "";
+            return false;
         }
 
     }
@@ -166,11 +155,10 @@ QString UBImportDocument::expandFileToDir(const QFile& pZipFile, const QString& 
     if(zip.getZipError()!=UNZ_OK)
     {
       qWarning() << "Import failed. Cause: zip.close(): " << zip.getZipError();
-      return "";
+      return false;
     }
 
-
-    return documentRootFolder;
+    return true;
 }
 
 UBDocumentProxy* UBImportDocument::importFile(const QFile& pFile, const QString& pGroup)
@@ -183,17 +171,20 @@ UBDocumentProxy* UBImportDocument::importFile(const QFile& pFile, const QString&
     // first unzip the file to the correct place
     QString path = UBSettings::userDocumentDirectory();
 
-    QString documentRootFolder = expandFileToDir(pFile, path);
-
-	if(!documentRootFolder.length()){
+    QString documentRootFolder;
+    
+	if(!extractFileToDir(pFile, path, documentRootFolder)){
 		UBApplication::showMessage(tr("Import of file %1 failed.").arg(fi.baseName()));
-		return 0;
+		return NULL;
 	}
-	else{
-		UBDocumentProxy* newDocument = UBPersistenceManager::persistenceManager()->createDocumentFromDir(documentRootFolder, pGroup);
-		UBApplication::showMessage(tr("Import successful."));
-		return newDocument;
-	}
+
+    bool addTitlePage = false;
+    if(UBSettings::settings()->teacherGuidePageZeroActivated->get().toBool() && !QFile(documentRootFolder+"/page000.svg").exists())
+        addTitlePage=true;
+
+    UBDocumentProxy* newDocument = UBPersistenceManager::persistenceManager()->createDocumentFromDir(documentRootFolder, pGroup, "", false, addTitlePage);
+	UBApplication::showMessage(tr("Import successful."));
+	return newDocument;
 }
 
 bool UBImportDocument::addFileToDocument(UBDocumentProxy* pDocument, const QFile& pFile)
@@ -203,9 +194,18 @@ bool UBImportDocument::addFileToDocument(UBDocumentProxy* pDocument, const QFile
 
     QString path = UBFileSystemUtils::createTempDir();
 
-    QString documentRootFolder = expandFileToDir(pFile, path);
-
-    UBPersistenceManager::persistenceManager()->addDirectoryContentToDocument(documentRootFolder, pDocument);
+    QString documentRootFolder;
+    if (!extractFileToDir(pFile, path, documentRootFolder))
+    {
+        UBApplication::showMessage(tr("Import of file %1 failed.").arg(fi.baseName()));
+        return false;
+    }
+        
+    if (!UBPersistenceManager::persistenceManager()->addDirectoryContentToDocument(documentRootFolder, pDocument))
+    {
+        UBApplication::showMessage(tr("Import of file %1 failed.").arg(fi.baseName()));
+        return false;
+    }
 
     UBFileSystemUtils::deleteDir(path);
 

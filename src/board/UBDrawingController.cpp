@@ -1,17 +1,24 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 #include "UBDrawingController.h"
 
@@ -47,7 +54,6 @@ UBDrawingController::UBDrawingController(QObject * parent)
     , mActiveRuler(NULL)
     , mStylusTool((UBStylusTool::Enum)-1)
     , mLatestDrawingTool((UBStylusTool::Enum)-1)
-    , mDrawingMode(DRAWING_MODE)
 	, mIsDesktopMode(false)
 {
     connect(UBSettings::settings(), SIGNAL(colorContextChanged()), this, SIGNAL(colorPaletteChanged()));
@@ -110,16 +116,10 @@ void UBDrawingController::setStylusTool(int tool)
         mStylusTool = (UBStylusTool::Enum)tool;
 
 
-        if(eDrawingMode_Vector == DRAWING_MODE && !mIsDesktopMode){
-            mDrawingMode = eDrawingMode_Vector;
-        }
-
         if (mStylusTool == UBStylusTool::Pen)
             UBApplication::mainWindow->actionPen->setChecked(true);
-        else if (mStylusTool == UBStylusTool::Eraser){
+        else if (mStylusTool == UBStylusTool::Eraser)
             UBApplication::mainWindow->actionEraser->setChecked(true);
-            mDrawingMode = eDrawingMode_Artistic;
-        }
         else if (mStylusTool == UBStylusTool::Marker)
             UBApplication::mainWindow->actionMarker->setChecked(true);
         else if (mStylusTool == UBStylusTool::Selector)
@@ -407,12 +407,3 @@ void UBDrawingController::captureToolSelected(bool checked)
         setStylusTool(UBStylusTool::Capture);
 }
 
-void UBDrawingController::setDrawingMode(eDrawingMode mode)
-{
-    mDrawingMode = mode;
-}
-
-eDrawingMode UBDrawingController::drawingMode()
-{
-    return mDrawingMode;
-}

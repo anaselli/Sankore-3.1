@@ -1,17 +1,24 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 #include "UBGraphicsDelegateFrame.h"
 
@@ -49,6 +56,8 @@ UBGraphicsDelegateFrame::UBGraphicsDelegateFrame(UBGraphicsItemDelegate* pDelega
     , mTotalTranslateX(0)
     , mTotalTranslateY(0)
     , mOperationMode(Scaling)
+    , mFlippedX(false)
+    , mFlippedY(false)
     , mMirrorX(false)
     , mMirrorY(false)
 {
@@ -74,11 +83,9 @@ UBGraphicsDelegateFrame::UBGraphicsDelegateFrame(UBGraphicsItemDelegate* pDelega
     mBottomResizeGrip = new QGraphicsRectItem(this);
     mBottomResizeGrip->setPen(Qt::NoPen);
     mLeftResizeGrip = new QGraphicsRectItem(this);
-    mLeftResizeGrip->setToolTip("left");
     mLeftResizeGrip->setPen(Qt::NoPen);
     mRightResizeGrip = new QGraphicsRectItem(this);
     mRightResizeGrip->setPen(Qt::NoPen);
-    mRightResizeGrip->setToolTip("Right");
     mTopResizeGrip = new QGraphicsRectItem(this);
     mTopResizeGrip->setPen(Qt::NoPen);
 
@@ -224,12 +231,14 @@ void UBGraphicsDelegateFrame::mousePressEvent(QGraphicsSceneMouseEvent *event)
     mAngleOffset = 0;
 
     mInitialTransform = buildTransform();
+    mOriginalSize = delegated()->boundingRect().size();
 
     mCurrentTool = toolFromPos(event->pos());
-    setCursorFromAngle(QString(""));
+    setCursorFromAngle(QString::number((int)mAngle % 360));
     event->accept();
 
-    prepareFramesToMove(getLinkedFrames());
+    if (moving())
+        prepareFramesToMove(getLinkedFrames());
 
 }
 
@@ -241,7 +250,7 @@ void UBGraphicsDelegateFrame::setCursorFromAngle(QString angle)
 
         QSize cursorSize(45,30);
 
-     
+
         QImage mask_img(cursorSize, QImage::Format_Mono);
         mask_img.fill(0xff);
         QPainter mask_ptr(&mask_img);
@@ -250,7 +259,7 @@ void UBGraphicsDelegateFrame::setCursorFromAngle(QString angle)
         QBitmap bmpMask = QBitmap::fromImage(mask_img);
 
 
-        QPixmap pixCursor(cursorSize); 
+        QPixmap pixCursor(cursorSize);
         pixCursor.fill(QColor(Qt::white));
 
         QPainter painter(&pixCursor);
@@ -286,153 +295,214 @@ bool UBGraphicsDelegateFrame::canResizeBottomRight(qreal width, qreal height, qr
     return res;
 }
 
+QPointF UBGraphicsDelegateFrame::getFixedPointFromPos()
+{
+    QPointF fixedPoint;
+    if (!moving() && !rotating())
+    {
+        if (resizingTop())
+        {
+            if (mMirrorX && mMirrorY)
+            {
+                if ((0 < mAngle) && (mAngle < 90))
+                    fixedPoint = delegated()->sceneBoundingRect().topLeft();
+                else
+                    fixedPoint = delegated()->sceneBoundingRect().topRight();
+            }
+            else
+            {
+                if ((0 < mAngle) && (mAngle <= 90))
+                    fixedPoint = delegated()->sceneBoundingRect().bottomRight();
+                else
+                    fixedPoint = delegated()->sceneBoundingRect().bottomLeft();
+            }
+        }
+        else if (resizingLeft())
+        {
+            if (mMirrorX && mMirrorY)
+            {
+                if ((0 < mAngle) && (mAngle < 90))
+                    fixedPoint = delegated()->sceneBoundingRect().bottomLeft();
+                else
+                    fixedPoint = delegated()->sceneBoundingRect().topLeft();
+            }
+            else
+            {
+                if ((0 < mAngle) && (mAngle <= 90))
+                    fixedPoint = delegated()->sceneBoundingRect().topRight();
+                else
+                    fixedPoint = delegated()->sceneBoundingRect().bottomRight();
+            }
+        }
+    }
+    return fixedPoint;
+}
+
+
+QSizeF UBGraphicsDelegateFrame::getResizeVector(qreal moveX, qreal moveY)
+{
+    qreal dPosX = 0;
+    qreal dPosY = 0;
+
+    if (resizingTop())
+    {
+        if (mMirrorX && mMirrorY)
+            dPosY = moveY;
+        else
+            dPosY = -moveY;
+    }
+    else if (resizingLeft())
+    {
+        if (mMirrorX && mMirrorY)
+            dPosX = moveX;
+        else
+            dPosX = -moveX;
+    }
+
+    else if (resizingRight())
+        dPosX = (mMirrorX) ?  -moveX : moveX;
+    else if (resizingBottom())
+        dPosY = mMirrorY ? -moveY : moveY;
+
+    return QSizeF(dPosX, dPosY);
+}
+
+QSizeF UBGraphicsDelegateFrame::resizeDelegate(qreal moveX, qreal moveY)
+{
+    QSizeF incVector;
+    mFixedPoint = getFixedPointFromPos();
+
+    UBResizableGraphicsItem* resizableItem = dynamic_cast<UBResizableGraphicsItem*>(delegated());
+    if (resizableItem)
+    {
+        incVector = getResizeVector(moveX, moveY);
+        resizableItem->resize(mOriginalSize + incVector);
+
+        if (resizingTop() || resizingLeft() || ((mMirrorX || mMirrorY) && resizingBottomRight()))
+        {
+            QPointF pos1 = getFixedPointFromPos();
+            delegated()->setPos(delegated()->pos()-pos1+mFixedPoint);
+        }
+    }
+
+    return incVector;
+}
+
 void UBGraphicsDelegateFrame::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
     if (None == mCurrentTool)
-        return; 
+        return;
 
-    QLineF move(mStartingPoint, event->scenePos());
+    QLineF move = QLineF(mStartingPoint, event->scenePos());
     qreal moveX = move.length() * cos((move.angle() - mAngle) * PI / 180);
     qreal moveY = -move.length() * sin((move.angle() - mAngle) * PI / 180);
     qreal width = delegated()->boundingRect().width() * mTotalScaleX;
     qreal height = delegated()->boundingRect().height() * mTotalScaleY;
 
-    if(mOperationMode == Scaling)
+    if (mOperationMode == Scaling)
     {
-        mTranslateX = moveX;
-        // Perform the resize
-        if (resizingBottomRight())
+        if(!rotating())
         {
-            // -----------------------------------------------------
-            // ! We want to keep the aspect ratio with this resize !
-            // -----------------------------------------------------
-            qreal scaleX;
-            qreal scaleY;
-
-            if(!mMirrorX){
-                scaleX = (width + moveX) / width;
-            }else{
-                scaleX = (width - moveX) / width;
-            }
-
-            if(!mMirrorY){
-                scaleY = (height + moveY) / height;
-            }else{
-                scaleY = (height - moveY) / height;
-            }
-
-            qreal scaleFactor = (scaleX + scaleY) / 2;
-
-            // Do not allow resizing of image size under frame size
-            if (canResizeBottomRight(width, height, scaleFactor))
-            {
-                if (mRespectRatio)
-                {
-                    mScaleX = scaleFactor;
-                    mScaleY = scaleFactor;
-                }
-                else
-                {
-                    mScaleX = scaleX;
-                    mScaleY = scaleY;
-                }
-            }
-        }else if (resizingLeft() || resizingRight())
-        {
-            if(width != 0){
-                qreal scaleX = 0.0;
-                if(resizingLeft()){
-                    scaleX = (width - moveX) / width;
-                }else if(resizingRight()){
-                    scaleX = (width + moveX) / width;
-                }
-                if(mDelegate->isFlippable() && qAbs(scaleX) != 0){
-                    if((qAbs(width * scaleX)) < 2*mFrameWidth){
-                        bool negative = (scaleX < 0)?true:false;
-                        if(negative){
-                            if(mMirrorX)
-                                scaleX = 2*mFrameWidth/width;
-                            else
-                                scaleX = -2*mFrameWidth/width;
-                        }else{
-                            scaleX = -1;
-                        }
-                    }
-                    mScaleX = scaleX;
-                }else if (scaleX > 1 || (width * scaleX) > 2 * mFrameWidth){
-                    mScaleX = scaleX;
-                    if(resizingLeft()){
-                        mTranslateX = moveX;
-                    }
-                }
-            }
-        }else if(resizingTop() || resizingBottom()){
-            if(height != 0){
-                qreal scaleY = 0.0;
-                if(resizingTop()){
-                    scaleY = (height - moveY) / height;
-                }else if(resizingBottom()){
-                    scaleY = (height + moveY) / height;
-                }
-
-                if(mDelegate->isFlippable() && qAbs(scaleY) != 0){
-                    if((qAbs(height * scaleY)) < 2*mFrameWidth){
-                        bool negative = (scaleY < 0)?true:false;
-                        if(negative){
-                            if(mMirrorY)
-                                scaleY = 2*mFrameWidth/width;
-                            else
-                                scaleY = -2*mFrameWidth/width;
-                        }else{
-                            scaleY = -1;
-                        }
-                    }
-                    mScaleY = scaleY;
-                }else if (scaleY > 1 || (height * scaleY) > 2 * mFrameWidth)
-                {
-                    mScaleY = scaleY;
-                    if(resizingTop()){
-                        mTranslateY = moveY;
-                    }
-                }
-            }
-        }
-    }
-    else if (mOperationMode == Resizing || mOperationMode == ResizingHorizontally)
-    {
-        mTranslateX = moveX;
-        UBResizableGraphicsItem* resizableItem = dynamic_cast<UBResizableGraphicsItem*>(delegated());
-
-        if (resizableItem)
-        {
-            QLineF mousePosDelta(delegated()->mapFromScene(event->lastScenePos())
-                    , delegated()->mapFromScene(event->scenePos()));
-            QSizeF incVector(0, 0);
-
+            mTranslateX = moveX;
+            // Perform the resize
             if (resizingBottomRight())
             {
-                incVector = QSizeF(mousePosDelta.dx(), mousePosDelta.dy());
-            }
-            else if (resizingRight())
-            {
-                incVector = QSizeF(mousePosDelta.dx(), 0);
-            }
-            else if (resizingBottom())
-            {
-                incVector = QSizeF(0, mousePosDelta.dy());
-            }
-            else if (resizingLeft())
-            {
-                incVector = QSizeF(- mousePosDelta.dx(), 0);
-            }
-            else if (resizingTop())
-            {
-                incVector = QSizeF(0, - mousePosDelta.dy());
-            }
+                // -----------------------------------------------------
+                // ! We want to keep the aspect ratio with this resize !
+                // -----------------------------------------------------
+                qreal scaleX;
+                qreal scaleY;
 
-            QSizeF newSize = resizableItem->size() + incVector;
+                if(!mMirrorX){
+                    scaleX = (width + moveX) / width;
+                }else{
+                    scaleX = (width - moveX) / width;
+                }
 
-                    resizableItem->resize(newSize);
+                if(!mMirrorY){
+                    scaleY = (height + moveY) / height;
+                }else{
+                    scaleY = (height - moveY) / height;
+                }
+
+                qreal scaleFactor = (scaleX + scaleY) / 2;
+
+                // Do not allow resizing of image size under frame size
+                if (canResizeBottomRight(width, height, scaleFactor))
+                {
+                    if (mRespectRatio)
+                    {
+                        mScaleX = scaleFactor;
+                        mScaleY = scaleFactor;
+                    }
+                    else
+                    {
+                        mScaleX = scaleX;
+                        mScaleY = scaleY;
+                    }
+                }
+            }else if (resizingLeft() || resizingRight())
+            {
+                if(width != 0){
+                    qreal scaleX = 0.0;
+                    if(resizingLeft()){
+                        scaleX = (width - moveX) / width;
+                    }else if(resizingRight()){
+                        scaleX = (width + moveX) / width;
+                    }
+                    if(mDelegate->isFlippable() && qAbs(scaleX) != 0){
+                        if((qAbs(width * scaleX)) < 2*mFrameWidth){
+                            bool negative = (scaleX < 0)?true:false;
+                            if(negative){
+                                if(mMirrorX)
+                                    scaleX = 2*mFrameWidth/width;
+                                else
+                                    scaleX = -2*mFrameWidth/width;
+                            }else{
+                                scaleX = -1;
+                                mFlippedX = !mFlippedX;
+                            }
+                        }
+                        mScaleX = scaleX;
+                    }else if (scaleX > 1 || (width * scaleX) > 2 * mFrameWidth){
+                        mScaleX = scaleX;
+                        if(resizingLeft()){
+                            mTranslateX = moveX;
+                        }
+                    }
+                }
+            }else if(resizingTop() || resizingBottom()){
+                if(height != 0){
+                    qreal scaleY = 0.0;
+                    if(resizingTop()){
+                        scaleY = (height - moveY) / height;
+                    }else if(resizingBottom()){
+                        scaleY = (height + moveY) / height;
+                    }
+
+                    if(mDelegate->isFlippable() && qAbs(scaleY) != 0){
+                        if((qAbs(height * scaleY)) < 2*mFrameWidth){
+                            bool negative = (scaleY < 0)?true:false;
+                            if(negative){
+                                if(mMirrorY)
+                                    scaleY = 2*mFrameWidth/width;
+                                else
+                                    scaleY = -2*mFrameWidth/width;
+                            }else{
+                                scaleY = -1;
+                                mFlippedY = !mFlippedY;
+                            }
+                        }
+                        mScaleY = scaleY;
+                    }else if (scaleY > 1 || (height * scaleY) > 2 * mFrameWidth)
+                    {
+                        mScaleY = scaleY;
+                        if(resizingTop()){
+                            mTranslateY = moveY;
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -475,57 +545,95 @@ void UBGraphicsDelegateFrame::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         moveLinkedItems(move);
     }
 
-    QTransform tr = buildTransform();
-
-    if (resizingRight() || resizingBottom() || resizingBottomRight())
+    if (mOperationMode == Scaling || moving() || rotating())
     {
-        QPointF ref;
+        QTransform tr = buildTransform();
 
-        // we just detects coordinates of corner before and after scaling and then moves object at diff between them.
-        if (resizingBottomRight() && mMirrorX)
-            mTranslateX += mInitialTransform.map(delegated()->boundingRect().bottomRight()).x() - tr.map(delegated()->boundingRect().bottomRight()).x();
-        else
-            mTranslateX += mInitialTransform.map(delegated()->boundingRect().topLeft()).x() - tr.map(delegated()->boundingRect().topLeft()).x();
+        if (resizingRight() || resizingBottom() || resizingBottomRight())
+        {
+            QPointF ref;
 
-        if (resizingBottomRight() && mMirrorY)
-            mTranslateY += mInitialTransform.map(delegated()->boundingRect().bottomRight()).y() - tr.map(delegated()->boundingRect().bottomRight()).y();
-        else
-            mTranslateY += mInitialTransform.map(delegated()->boundingRect().topLeft()).y() - tr.map(delegated()->boundingRect().topLeft()).y();         
-
-        // Update the transform
-        tr = buildTransform();
-    }
-    else if (resizingTop() || resizingLeft())
-    {
-        if (mOperationMode == Scaling)
+            // we just detects coordinates of corner before and after scaling and then moves object at diff between them.
+            if (resizingBottomRight() && (mMirrorX || mMirrorY))
+            {
+                if (mFlippedX && !mMirrorX && mFlippedY)// && !mMirrorY)
+                {
+                    mTranslateX += mInitialTransform.map(delegated()->boundingRect().bottomLeft()).x() - tr.map(delegated()->boundingRect().bottomLeft()).x();
+                    mTranslateY += mInitialTransform.map(delegated()->boundingRect().bottomLeft()).y() - tr.map(delegated()->boundingRect().bottomLeft()).y();
+                }
+                else if ((mFlippedX || mMirrorX) && (mFlippedY || mMirrorY))
+                {
+                    mTranslateX += mInitialTransform.map(delegated()->boundingRect().bottomRight()).x() - tr.map(delegated()->boundingRect().bottomRight()).x();
+                    mTranslateY += mInitialTransform.map(delegated()->boundingRect().bottomRight()).y() - tr.map(delegated()->boundingRect().bottomRight()).y();
+                }
+                else if (mFlippedX || mMirrorX)
+                {
+                    mTranslateX += mInitialTransform.map(delegated()->boundingRect().topRight()).x() - tr.map(delegated()->boundingRect().topRight()).x();
+                    mTranslateY += mInitialTransform.map(delegated()->boundingRect().topRight()).y() - tr.map(delegated()->boundingRect().topRight()).y();
+                }
+                else if (mFlippedY || mMirrorY)
+                {
+                    mTranslateX += mInitialTransform.map(delegated()->boundingRect().bottomLeft()).x() - tr.map(delegated()->boundingRect().bottomLeft()).x();
+                    mTranslateY += mInitialTransform.map(delegated()->boundingRect().bottomLeft()).y() - tr.map(delegated()->boundingRect().bottomLeft()).y();
+                }
+                else
+                {
+                    mTranslateX += mInitialTransform.map(delegated()->boundingRect().bottomRight()).x() - tr.map(delegated()->boundingRect().bottomRight()).x();
+                    mTranslateY += mInitialTransform.map(delegated()->boundingRect().bottomRight()).y() - tr.map(delegated()->boundingRect().bottomRight()).y();
+                }
+            }
+            else
+            {
+                    mTranslateX += mInitialTransform.map(delegated()->boundingRect().topLeft()).x() - tr.map(delegated()->boundingRect().topLeft()).x();
+                    mTranslateY += mInitialTransform.map(delegated()->boundingRect().topLeft()).y() - tr.map(delegated()->boundingRect().topLeft()).y();
+            }
+        }
+        else if (resizingTop() || resizingLeft())
         {
             QPointF bottomRight = tr.map(delegated()->boundingRect().bottomRight());
             QPointF fixedPoint = mInitialTransform.map(delegated()->boundingRect().bottomRight());
             mTranslateX += fixedPoint.x() - bottomRight.x();
             mTranslateY += fixedPoint.y() - bottomRight.y();
         }
-        else
-        {
-            QLineF vector;
-            if (resizingLeft())
-            {
-                QPointF topRight1 = mInitialTransform.map(QPointF(delegated()->boundingRect().width() - moveX, 0));
-                QPointF topRight2 = mInitialTransform.map(QPointF(delegated()->boundingRect().width(), 0));
-                vector.setPoints(topRight1, topRight2);
-            }
-            else
-            {
-                QPointF bottomLeft1 = mInitialTransform.map(QPointF(0, delegated()->boundingRect().height() - moveY));
-                QPointF bottomLeft2 = mInitialTransform.map(QPointF(0, delegated()->boundingRect().height()));
-                vector.setPoints(bottomLeft1, bottomLeft2);
-            }
-            mTranslateX = vector.dx();
-            mTranslateY = vector.dy();
-        }
-        tr = buildTransform();
+        delegated()->setTransform(buildTransform());
     }
+    else // resizing/resizing horizontally
+    {
 
-    delegated()->setTransform(tr);
+        if (resizingBottomRight())
+        {
+            static QSizeF incV = QSizeF();
+            static QSizeF incH = QSizeF();
+
+            if (mMirrorX && mMirrorY)
+                mCurrentTool = ResizeTop;
+            else
+                mCurrentTool = ResizeBottom;
+
+            incV = resizeDelegate(moveX, moveY);
+            mOriginalSize += incV;
+
+            if (mMirrorX && mMirrorY)
+                mCurrentTool = ResizeLeft;
+            else
+                mCurrentTool = ResizeRight;
+
+            move = QLineF(event->lastScenePos(), event->scenePos());
+            moveX = move.length() * cos((move.angle() - mAngle) * PI / 180);
+            moveY = -move.length() * sin((move.angle() - mAngle) * PI / 180);
+
+            mFixedPoint = getFixedPointFromPos();
+
+            incH = resizeDelegate(moveX, moveY);
+
+            mOriginalSize -= incV;
+            mOriginalSize += incH;
+
+            mCurrentTool = ResizeBottomRight;
+        }
+        else
+            resizeDelegate(moveX, moveY);
+    }
     event->accept();
 }
 
@@ -553,11 +661,11 @@ void UBGraphicsDelegateFrame::prepareFramesToMove(QList<UBGraphicsDelegateFrame 
     foreach (UBGraphicsDelegateFrame *frame, mLinkedFrames)
     {
         frame->prepareLinkedFrameToMove();
-    }  
+    }
 }
 
 void UBGraphicsDelegateFrame::prepareLinkedFrameToMove()
-{ 
+{
     mDelegate->startUndoStep();
 
     mStartingPoint = QPointF(0,0);
@@ -578,12 +686,12 @@ void UBGraphicsDelegateFrame::prepareLinkedFrameToMove()
 void UBGraphicsDelegateFrame::moveLinkedItems(QLineF movingVector, bool bLinked)
 {
     if (bLinked)
-    {  
+    {
         mCurrentTool = Move;
 
         mTranslateX = movingVector.dx();
         mTranslateY = movingVector.dy();
-        
+
         delegated()->setTransform(buildTransform(), false);
     }
     else
@@ -626,6 +734,7 @@ void UBGraphicsDelegateFrame::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
     event->accept();
 
     mCurrentTool = None;
+
     QGraphicsRectItem::mouseReleaseEvent(event);
 
     // Show the buttons
@@ -669,7 +778,7 @@ void UBGraphicsDelegateFrame::setVisible(bool visible)
 void UBGraphicsDelegateFrame::positionHandles()
 {
     QRectF itemRect = delegated()->boundingRect();
-    
+
     if (mDelegate->getToolBarItem() && mDelegate->getToolBarItem()->isVisibleOnBoard()
         && mDelegate->getToolBarItem()->isShifting())
     {

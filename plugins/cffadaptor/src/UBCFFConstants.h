@@ -1,3 +1,26 @@
+/*
+ * Copyright (C) 2012 Webdoc SA
+ *
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Library General Public
+ * License as published by the Free Software Foundation, version 2,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Library General Public License for more details.
+ *
+ * You should have received a copy of the GNU Library General Public
+ * License along with Open-Sankoré; if not, see
+ * <http://www.gnu.org/licenses/>.
+ */
+
+
 #ifndef UBCFFCONSTANTS_H
 #define UBCFFCONSTANTS_H
 
@@ -28,6 +51,7 @@ const QString tIWBPageSet = "pageset";
 const QString tId = "id";
 const QString tElement = "element";
 const QString tUBZGroup = "group";
+const QString tUBZGroups = "groups";
 const QString tUBZG = "g";
 const QString tUBZPolygon = "polygon";
 const QString tUBZPolyline = "polyline";
@@ -67,6 +91,7 @@ const QString aBackground = "background";
 const QString aCrossedBackground = "crossed-background";
 const QString aUBZType = "type";
 const QString aUBZUuid = "uuid";
+const QString aUBZParent = "parent";
 const QString aFill = "fill"; // IWB attribute contans color to fill
 
 const QString aID = "id";   // ID of any svg element can be placed in to iwb section
@@ -106,7 +131,7 @@ const QString ubNS = "http://uniboard.mnemis.com/document";
 const QString svgUBZNS = "http://www.imsglobal.org/xsd/iwb_v1p0";
 const QString svgIWBNS = "http://www.w3.org/2000/svg";
 const QString xlinkNS = "http://www.w3.org/1999/xlink";
-const QString iwbNS = "http://www.becta.org.uk/iwb";
+const QString iwbNS = "http://www.imsglobal.org/xsd/iwb_v1p0";
 const QString xsiNS = "http://www.w3.org/2001/XMLSchema-instance";
 const QString xsiShemaLocation = "\
 http://www.imsglobal.org/xsd/iwb_v1p0 \
@@ -334,8 +359,10 @@ stroke-lineshape-end \
 const QString ubzElementAttributesToConvert(" \
 xlink:href, \
 src, \
-transform \
-");
+transform, \
+uuid \
+"
+);
 
 // additional attributes. Have references in SVG section.
 const QString svgElementAttributes(" \

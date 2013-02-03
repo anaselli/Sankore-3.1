@@ -1,17 +1,25 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+
 #ifndef UBITEM_H
 #define UBITEM_H
 
@@ -90,29 +98,32 @@ class UBItem
 class UBGraphicsItem
 {
 protected:
-
-    UBGraphicsItem() : mDelegate(0)
+    UBGraphicsItem() : mDelegate(NULL)
     {
         // NOOP
     }
-    UBGraphicsItemDelegate* mDelegate;
-
-    virtual ~UBGraphicsItem()
-    {
-        // NOOP
-    }
+    virtual ~UBGraphicsItem();
+    void setDelegate(UBGraphicsItemDelegate* mDelegate);
 
 public:
+
+    virtual int type() const = 0;
+
+    inline UBGraphicsItemDelegate *Delegate() const { return mDelegate; }
 
     static void assignZValue(QGraphicsItem*, qreal value);
     static bool isRotatable(QGraphicsItem *item);
     static bool isFlippable(QGraphicsItem *item);
+    static QUuid getOwnUuid(QGraphicsItem *item);
 
-    virtual UBGraphicsItemDelegate *Delegate() const  = 0;
+    static UBGraphicsItemDelegate *Delegate(QGraphicsItem *pItem);
 
-    virtual void remove() = 0;
+    void remove(bool canUndo = true);
 
-    virtual void clearSource(){;}
+    virtual void clearSource(){}
+
+private:
+    UBGraphicsItemDelegate* mDelegate;
 };
 
 #endif // UBITEM_H

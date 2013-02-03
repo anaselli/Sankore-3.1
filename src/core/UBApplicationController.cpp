@@ -1,17 +1,25 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+
 #include "UBApplicationController.h"
 
 #include "frameworks/UBPlatformUtils.h"
@@ -59,8 +67,11 @@
 
 #include "core/memcheck.h"
 
-UBApplicationController::UBApplicationController(UBBoardView *pControlView, UBBoardView *pDisplayView,
-        UBMainWindow* pMainWindow, QObject* parent)
+UBApplicationController::UBApplicationController(UBBoardView *pControlView, 
+                                                 UBBoardView *pDisplayView,
+                                                 UBMainWindow* pMainWindow, 
+                                                 QObject* parent,
+                                                 UBRightPalette* rightPalette)
     : QObject(parent)
     , mMainWindow(pMainWindow)
     , mControlView(pControlView)
@@ -75,7 +86,7 @@ UBApplicationController::UBApplicationController(UBBoardView *pControlView, UBBo
 {
     mDisplayManager = new UBDisplayManager(this);
 
-    mUninoteController = new UBDesktopAnnotationController(this);
+    mUninoteController = new UBDesktopAnnotationController(this, rightPalette);
 
     connect(mDisplayManager, SIGNAL(screenLayoutChanged()), this, SLOT(screenLayoutChanged()));
     connect(mDisplayManager, SIGNAL(screenLayoutChanged()), mUninoteController, SLOT(screenLayoutChanged()));
@@ -461,7 +472,6 @@ void UBApplicationController::showDesktop(bool dontSwitchFrontProcess)
     }
 
     UBDrawingController::drawingController()->setInDestopMode(true);
-    UBDrawingController::drawingController()->setDrawingMode(eDrawingMode_Artistic);
     UBDrawingController::drawingController()->setStylusTool(UBStylusTool::Selector);
 }
 
@@ -595,12 +605,6 @@ void UBApplicationController::checkUpdateRequest()
 
 void UBApplicationController::hideDesktop()
 {
-    mDisplayManager->adjustScreens(-1);
-
-    if(UBStylusTool::Eraser != UBDrawingController::drawingController()->stylusTool()){
-    	UBDrawingController::drawingController()->setDrawingMode(eDrawingMode_Vector);
-    }
-
     if (mMainMode == Board)
     {
         showBoard();
@@ -623,6 +627,9 @@ void UBApplicationController::hideDesktop()
     }
 
     mIsShowingDesktop = false;
+
+    mDisplayManager->adjustScreens(-1);
+
     emit desktopMode(false);
 }
 

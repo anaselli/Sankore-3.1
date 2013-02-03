@@ -1,17 +1,25 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+
 /****************************************************************************
 **
 ** Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
@@ -270,28 +278,6 @@ void WBBrowserWindow::setupToolBarForTutorial()
         if (tb && tb->menu())
             tb->setMenu(NULL);
     }
-//    mTabWidget->addWebAction(mUniboardMainWindow->actionWebReload, QWebPage::Reload);
-//    mTabWidget->addWebAction(mUniboardMainWindow->actionStopLoading, QWebPage::Stop);
-
-//    mWebToolBar->insertWidget(mUniboardMainWindow->actionWebBigger, mTabWidget->lineEditStack());
-
-//    mSearchToolBar = new WBToolbarSearch(mWebToolBar);
-
-//    mSearchAction = mWebToolBar->insertWidget(mUniboardMainWindow->actionWebBigger, mSearchToolBar);
-
-//    connect(mSearchToolBar, SIGNAL(search(const QUrl&)), SLOT(loadUrl(const QUrl&)));
-
-//    mChaseWidget = new WBChaseWidget(this);
-//    mWebToolBar->insertWidget(mUniboardMainWindow->actionWebBigger, mChaseWidget);
-
-//    mWebToolBar->insertSeparator(mUniboardMainWindow->actionWebBigger);
-
-//    connect(mUniboardMainWindow->actionHome, SIGNAL(triggered()), this , SLOT(slotHome()));
-
-//    connect(mUniboardMainWindow->actionBookmarks, SIGNAL(triggered()), this , SLOT(bookmarks()));
-//    connect(mUniboardMainWindow->actionAddBookmark, SIGNAL(triggered()), this , SLOT(addBookmark()));
-//    connect(mUniboardMainWindow->actionWebBigger, SIGNAL(triggered()), this , SLOT(slotViewZoomIn()));
-//    connect(mUniboardMainWindow->actionWebSmaller, SIGNAL(triggered()), this , SLOT(slotViewZoomOut()));
 
     mWebToolBar->show();
 }
@@ -373,7 +359,7 @@ void WBBrowserWindow::loadUrl(const QUrl &url)
     if (!currentTabWebView() || !url.isValid())
         return;
 
-    mTabWidget->currentLineEdit()->setText(QString::fromUtf8(url.toEncoded()));
+    mTabWidget->currentLineEdit()->setText(url.toString());
     mTabWidget->loadUrlInCurrentTab(url);
 }
 

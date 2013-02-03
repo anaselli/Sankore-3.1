@@ -1,17 +1,24 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 #include "UBFileSystemUtils.h"
 
@@ -19,7 +26,6 @@
 
 #include "core/UBApplication.h"
 
-#include "board/UBBoardController.h"
 #include "document/UBDocumentContainer.h"
 
 #include "globals/UBGlobals.h"
@@ -273,7 +279,8 @@ bool UBFileSystemUtils::copyDir(const QString& pSourceDirPath, const QString& pT
     QDir dirSource(pSourceDirPath);
     QDir dirTarget(pTargetDirPath);
 
-    dirTarget.mkpath(pTargetDirPath);
+    if (!dirTarget.mkpath(pTargetDirPath))
+        return false;
 
     bool successSoFar = true;
 
@@ -359,7 +366,7 @@ QString UBFileSystemUtils::thumbnailPath(const QString& path)
 
 QString UBFileSystemUtils::extension(const QString& fileName)
 {
-    QString extension;
+    QString extension("");
 
     int lastDotIndex = fileName.lastIndexOf(".");
 
@@ -854,4 +861,3 @@ QString UBFileSystemUtils::readTextFile(QString path)
 
     return "";
 }
-

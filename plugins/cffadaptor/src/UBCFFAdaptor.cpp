@@ -1,3 +1,25 @@
+/*
+ * Copyright (C) 2012 Webdoc SA
+ *
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
 #include "UBCFFAdaptor.h"
 
 #include <QtCore>
@@ -550,8 +572,8 @@ QDomElement UBCFFAdaptor::UBToCFFConverter::parsePage(const QString &pageFileNam
                 pageFile.close();
                 return QDomElement();
             }
-        } else if (tagname == tUBZGroup) {
-            group = parseGroupPageSection(nextTopElement);
+        } else if (tagname == tUBZGroups) {
+            group = parseGroupsPageSection(nextTopElement);
             if (group.isNull()) {
                 qDebug() << "Page doesn't contains any groups.";
                 pageFile.close();
@@ -634,6 +656,7 @@ QDomElement UBCFFAdaptor::UBToCFFConverter::parseSvgPageSection(const QDomElemen
         else if (tagName == tUBZLine)          parseUBZLine(nextElement, svgElements);
         else if (tagName == tUBZPolygon)       parseUBZPolygon(nextElement, svgElements);
         else if (tagName == tUBZPolyline)      parseUBZPolyline(nextElement, svgElements);
+        else if (tagName == tUBZGroups)        parseGroupsPageSection(nextElement);
 
         nextElement = nextElement.nextSiblingElement();
     }
@@ -694,12 +717,34 @@ bool UBCFFAdaptor::UBToCFFConverter::writeExtendedIwbSection()
 // extended element options
 // editable, background, locked are supported for now
 
-QDomElement UBCFFAdaptor::UBToCFFConverter::parseGroupPageSection(const QDomElement &element)
+QDomElement UBCFFAdaptor::UBToCFFConverter::parseGroupsPageSection(const QDomElement &groupRoot)
 {
 //    First sankore side implementation needed. TODO in Sankore 1.5
-    Q_UNUSED(element)
+    if (!groupRoot.hasChildNodes()) {
+        qDebug() << "Group root is empty";
+        return QDomElement();
+    }
+
+    QDomElement groupElement = groupRoot.firstChildElement();
+
+    while (!groupElement.isNull()) {
+        QDomElement extendedElement = mDataModel->createElementNS(iwbNS, groupElement.tagName());
+        QDomElement groupChildElement = groupElement.firstChildElement();
+        while (!groupChildElement.isNull()) {
+            QDomElement extSubElement = mDataModel->createElementNS(iwbNS, groupChildElement.tagName());
+            extSubElement.setAttribute(aRef, groupChildElement.attribute(aID, QUuid().toString()));
+            extendedElement.appendChild(extSubElement);
+
+            groupChildElement = groupChildElement.nextSiblingElement();
+        }
+
+        mExtendedElements.append(extendedElement);
+
+        groupElement = groupElement.nextSiblingElement();
+    }
+
     qDebug() << "parsing ubz group section";
-    return QDomElement();
+    return groupRoot;
 }
 
 QString UBCFFAdaptor::UBToCFFConverter::getDstContentFolderName(const QString &elementType)
@@ -858,7 +903,7 @@ bool UBCFFAdaptor::UBToCFFConverter::itIsSupportedFormat(const QString &format) 
 
     QStringList tsl = format.split(".", QString::SkipEmptyParts);
     if (0 < tsl.count())
-        bRet = cffSupportedFileFormats.contains(tsl.at(tsl.count()-1));       
+        bRet = cffSupportedFileFormats.contains(tsl.at(tsl.count()-1).toLower());       
     else
         bRet = false;
 
@@ -1085,7 +1130,9 @@ bool UBCFFAdaptor::UBToCFFConverter::setContentFromUBZ(const QDomElement &ubzEle
         if (bRet)
         {
             svgElement.setAttribute(aSVGHref, sDstContentFolder+"/"+sDstFileName);
-            svgElement.setAttribute(aSVGRequiredExtension, svgRequiredExtensionPrefix+convertExtention(fileExtention));
+            // NOT by standard! Enable it later!
+            // validator http://validator.imsglobal.org/iwb/index.jsp?validate=package
+            //svgElement.setAttribute(aSVGRequiredExtension, svgRequiredExtensionPrefix+convertExtention(fileExtention));
         }
     }
     else
@@ -1112,7 +1159,9 @@ bool UBCFFAdaptor::UBToCFFConverter::setContentFromUBZ(const QDomElement &ubzEle
             if (bRet)
             {
                 svgElement.setAttribute(aSVGHref, sDstContentFolder+"/"+sDstFileName);
-                svgElement.setAttribute(aSVGRequiredExtension, svgRequiredExtensionPrefix+fePng);
+                // NOT by standard! Enable it later!
+                // validator http://validator.imsglobal.org/iwb/index.jsp?validate=package
+                //svgElement.setAttribute(aSVGRequiredExtension, svgRequiredExtensionPrefix+fePng);
             }
         }
     }else
@@ -1246,6 +1295,19 @@ bool UBCFFAdaptor::UBToCFFConverter::setCFFAttribute(const QString &attributeNam
         {
             setGeometryFromUBZ(ubzElement, svgElement);
         }
+        else
+            if (attributeName.contains(aUBZUuid))
+            {
+
+                QString parentId = ubzElement.attribute(aUBZParent);
+                QString id;
+                if (!parentId.isEmpty())
+                    id = "{" + parentId + "}" + "{" + ubzElement.attribute(aUBZUuid)+"}";
+                else
+                    id = "{" + ubzElement.attribute(aUBZUuid)+"}";
+
+                svgElement.setAttribute(aID, id);
+            }
         else 
             if (attributeName.contains(aUBZHref)||attributeName.contains(aSrc))
             {
@@ -1649,7 +1711,8 @@ bool UBCFFAdaptor::UBToCFFConverter::parseUBZAudio(const QDomElement &element, Q
         // CFF cannot show SVG images, so we need to convert it to png.
         if (bRes && createPngFromSvg(srcAudioImageFile, dstAudioImageFilePath, getTransformFromUBZ(element), QSize(audioImageDimention, audioImageDimention)))
         {
-            QDomElement svgSwitchSection = doc.createElementNS(svgIWBNS,svgIWBNSPrefix + ":" + tIWBSwitch);
+            // switch section disabled because of imcompatibility with validator http://validator.imsglobal.org/iwb/index.jsp?validate=package
+            // QDomElement svgSwitchSection = doc.createElementNS(svgIWBNS,svgIWBNSPrefix + ":" + tIWBSwitch);
 
             // first we place content
             QDomElement svgASection = doc.createElementNS(svgIWBNS,svgIWBNSPrefix + ":" + tIWBA);
@@ -1661,8 +1724,8 @@ bool UBCFFAdaptor::UBToCFFConverter::parseUBZAudio(const QDomElement &element, Q
             svgElementPart.setAttribute(aWidth, audioImageDimention);
 
             svgASection.appendChild(svgElementPart);
-
-            svgSwitchSection.appendChild(svgASection);
+            // switch section disabled because of imcompatibility with validator http://validator.imsglobal.org/iwb/index.jsp?validate=package
+            // svgSwitchSection.appendChild(svgASection);
 
             // if viewer cannot open that content - it must use that:
             QDomElement svgText = doc.createElementNS(svgIWBNS,svgIWBNSPrefix + ":" + tIWBTextArea);
@@ -1675,9 +1738,11 @@ bool UBCFFAdaptor::UBToCFFConverter::parseUBZAudio(const QDomElement &element, Q
             QDomText text = doc.createTextNode("Cannot Open Content");  
             svgText.appendChild(text);
 
-            svgSwitchSection.appendChild(svgText);
+            // switch section disabled because of imcompatibility with validator http://validator.imsglobal.org/iwb/index.jsp?validate=package          
+            // svgSwitchSection.appendChild(svgText);
 
-            addSVGElementToResultModel(svgSwitchSection, dstSvgList, getElementLayer(element));
+            // switch section disabled because of imcompatibility with validator http://validator.imsglobal.org/iwb/index.jsp?validate=package
+            addSVGElementToResultModel(svgASection/*svgSwitchSection*/, dstSvgList, getElementLayer(element));
 
             if (0 < iwbElementPart.attributes().count())
                 addIWBElementToResultModel(iwbElementPart);
@@ -1787,11 +1852,15 @@ bool UBCFFAdaptor::UBToCFFConverter::parseUBZPolygon(const QDomElement &element,
 
     if (setCommonAttributesFromUBZ(element, iwbElementPart, svgElementPart))
     {
+        svgElementPart.setAttribute(aStroke, svgElementPart.attribute(aFill));
         addSVGElementToResultModel(svgElementPart, dstSvgList, getElementLayer(element));
 
         if (0 < iwbElementPart.attributes().count())
         {   
-            QString id = QUuid::createUuid().toString();
+            QString id = svgElementPart.attribute(aUBZUuid);
+            if (id.isEmpty())
+                id = QUuid::createUuid().toString();
+
             svgElementPart.setAttribute(aID, id);
             iwbElementPart.setAttribute(aRef, id);     
 
@@ -1820,6 +1889,7 @@ bool UBCFFAdaptor::UBToCFFConverter::parseUBZPolyline(const QDomElement &element
 
     if (setCommonAttributesFromUBZ(element, iwbElementPart, svgElementPart))
     {
+        svgElementPart.setAttribute(aStroke, svgElementPart.attribute(aFill));
         addSVGElementToResultModel(svgElementPart, dstSvgList, getElementLayer(element));
 
         if (0 < iwbElementPart.attributes().count())
@@ -1852,6 +1922,7 @@ bool UBCFFAdaptor::UBToCFFConverter::parseUBZLine(const QDomElement &element, QM
 
     if (setCommonAttributesFromUBZ(element, iwbElementPart, svgElementPart))
     {
+        svgElementPart.setAttribute(aStroke, svgElementPart.attribute(aFill));
         addSVGElementToResultModel(svgElementPart, dstSvgList, getElementLayer(element));
 
         if (0 < iwbElementPart.attributes().count())

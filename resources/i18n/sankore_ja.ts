@@ -800,12 +800,16 @@
         <translation>古いSankore書類やUniboard書類を移入する</translation>
     </message>
     <message>
+        <source>Group Items</source>
+        <translation type="obsolete">アイテムを纏める</translation>
+    </message>
+    <message>
         <source>Group items</source>
         <translation>アイテムを纏める</translation>
     </message>
     <message>
         <source>Play</source>
-        <translation>演奏する</translation>
+        <translation>始動する</translation>
     </message>
     <message>
         <source>Interact with items</source>
@@ -813,11 +817,11 @@
     </message>
     <message>
         <source>Erase Background</source>
-        <translation>壁紙を削除する</translation>
+        <translation>背景を削除する</translation>
     </message>
     <message>
         <source>Remove the backgound</source>
-        <translation>壁紙を削除する</translation>
+        <translation>背景を削除する</translation>
     </message>
     <message>
         <source>Group</source>
@@ -865,12 +869,37 @@
 <context>
     <name>QObject</name>
     <message>
+        <source>Trash</source>
+        <comment>Pictures category element</comment>
+        <translation type="obsolete">ゴミ箱</translation>
+    </message>
+    <message>
+        <source>/Home</source>
+        <comment>Category list label on navigation tool bar</comment>
+        <translation type="obsolete">/ホーム</translation>
+    </message>
+    <message>
         <source>Element ID = </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Content is not supported in destination format.</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Page</source>
+        <translation type="unfinished">ページ削除</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to remove 1 page from the selected document &apos;%0&apos;?</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UBAbstractWidget</name>
+    <message>
+        <source>Loading ...</source>
+        <translation type="obsolete">ローディング中… </translation>
     </message>
 </context>
 <context>
@@ -934,6 +963,14 @@
         <translation>全てサポート(%1) </translation>
     </message>
     <message>
+        <source>Group</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ungroup</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Delete page %1 from document</source>
         <translation type="unfinished"></translation>
     </message>
@@ -954,7 +991,7 @@
     </message>
     <message>
         <source>CapturedImage</source>
-        <translation>スクリーンショット</translation>
+        <translation>キャプチャされた画像</translation>
     </message>
 </context>
 <context>
@@ -984,7 +1021,7 @@
     <name>UBDesktopPalette</name>
     <message>
         <source>Show Uniboard</source>
-        <translation>Uniboard表示 </translation>
+        <translation type="obsolete">Uniboard表示 </translation>
     </message>
     <message>
         <source>Capture Part of the Screen</source>
@@ -1005,6 +1042,10 @@
     <message>
         <source>Show Desktop on Secondary Screen</source>
         <translation>サブスクリーンにデスクトップを表示 </translation>
+    </message>
+    <message>
+        <source>Show Open-Sankore</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1095,7 +1136,7 @@
     </message>
     <message>
         <source>Folder does not contain any image files!</source>
-        <translation>フィルダーには画像ファイルが含まれていません！ </translation>
+        <translation type="obsolete">フィルダーには画像ファイルが含まれていません！ </translation>
     </message>
     <message>
         <source>Delete</source>
@@ -1139,6 +1180,14 @@
         <source>Title page</source>
         <translation>タイトルページ</translation>
     </message>
+    <message>
+        <source>Untitled Documents</source>
+        <translation type="unfinished">タイトルなしドキュメント</translation>
+    </message>
+    <message>
+        <source>Folder does not contain any image files</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UBDocumentManager</name>
@@ -1167,6 +1216,14 @@
         <translation>ファイル%1保存済み </translation>
     </message>
     <message>
+        <source>Importing page %1 of %2</source>
+        <translation type="obsolete"> %1 / %2 ページをインポート</translation>
+    </message>
+    <message>
+        <source>Erronous image data, skipping file %1</source>
+        <translation type="obsolete">画像データエラー、ファイル%1をスキップ</translation>
+    </message>
+    <message>
         <source>Inserting page %1 of %2</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1175,7 +1232,7 @@
         <translation type="unfinished">インポートに成功。</translation>
     </message>
     <message>
-        <source>Importing file</source>
+        <source>Importing file %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1272,15 +1329,15 @@
     </message>
     <message>
         <source>Exporting document...</source>
-        <translation>ドキュメント湧出しています... </translation>
+        <translation>ドキュメントのエクスポート中... </translation>
     </message>
     <message>
         <source>Export successful.</source>
-        <translation>エクスポートに成功. </translation>
+        <translation>エクスポートに成功 </translation>
     </message>
     <message>
         <source>Export failed.</source>
-        <translation>エクスポートに失敗. </translation>
+        <translation>エクスポートに失敗 </translation>
     </message>
 </context>
 <context>
@@ -1406,7 +1463,7 @@
     </message>
     <message>
         <source>Share</source>
-        <translation>分かち合う</translation>
+        <translation>シェアする</translation>
     </message>
     <message>
         <source>Search</source>
@@ -1430,7 +1487,7 @@
     </message>
     <message>
         <source>Rescan file system</source>
-        <translation>もう一度ファイルを分析する</translation>
+        <translation>ファイルを更新する</translation>
     </message>
 </context>
 <context>
@@ -1481,10 +1538,36 @@
     </message>
 </context>
 <context>
+    <name>UBFeaturesNewFolderDialog</name>
+    <message>
+        <source>Accept</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">キャンセル</translation>
+    </message>
+    <message>
+        <source>Enter a new folder name</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UBFeaturesProgressInfo</name>
     <message>
-        <source> load</source>
+        <source>Loading </source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UBGraphicsGroupContainerItemDelegate</name>
+    <message>
+        <source>Locked</source>
+        <translation type="unfinished">ロック</translation>
+    </message>
+    <message>
+        <source>Visible on Extended Screen</source>
+        <translation type="unfinished">拡張画面でみることができます </translation>
     </message>
 </context>
 <context>
@@ -1529,10 +1612,6 @@
 </context>
 <context>
     <name>UBGraphicsWidgetItem</name>
-    <message>
-        <source>Cannot load content</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Loading ...</source>
         <translation type="unfinished">ローディング中… </translation>
@@ -1597,6 +1676,14 @@
         <source>Image Format (</source>
         <translation>画像フォーマット（</translation>
     </message>
+    <message>
+        <source>Image import failed.</source>
+        <translation type="obsolete">画像インポートに失敗 </translation>
+    </message>
+    <message>
+        <source>Image import successful.</source>
+        <translation type="obsolete">画像インポートに成功 </translation>
+    </message>
 </context>
 <context>
     <name>UBImportPDF</name>
@@ -1611,6 +1698,10 @@
     <message>
         <source>Importing page %1 of %2</source>
         <translation>%1 / %2 ページをインポート</translation>
+    </message>
+    <message>
+        <source>PDF import successful.</source>
+        <translation type="obsolete">PDFインポートに成功</translation>
     </message>
 </context>
 <context>
@@ -1636,6 +1727,120 @@
     <message>
         <source>Enter</source>
         <translation>Enter</translation>
+    </message>
+</context>
+<context>
+    <name>UBLibActionBar</name>
+    <message>
+        <source>Add to favorites</source>
+        <translation type="obsolete">お気に入りに追加</translation>
+    </message>
+    <message>
+        <source>Share</source>
+        <translation type="obsolete">シェアする</translation>
+    </message>
+    <message>
+        <source>Search</source>
+        <translation type="obsolete">検索</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation type="obsolete">削除</translation>
+    </message>
+    <message>
+        <source>Back to folder</source>
+        <translation type="obsolete">フォルダーに戻る</translation>
+    </message>
+    <message>
+        <source>Remove from favorites</source>
+        <translation type="obsolete">お気に入りから削除</translation>
+    </message>
+    <message>
+        <source>Create new folder</source>
+        <translation type="obsolete">新規フォルダーを作成</translation>
+    </message>
+</context>
+<context>
+    <name>UBLibItemProperties</name>
+    <message>
+        <source>Add to page</source>
+        <translation type="obsolete">ページに追加 </translation>
+    </message>
+    <message>
+        <source>Set as background</source>
+        <translation type="obsolete">背景として設定</translation>
+    </message>
+    <message>
+        <source>Add to library</source>
+        <translation type="obsolete">ライブラリに追加</translation>
+    </message>
+    <message>
+        <source>Object informations</source>
+        <translation type="obsolete">オブジェクトインフォーメーション</translation>
+    </message>
+</context>
+<context>
+    <name>UBLibraryController</name>
+    <message>
+        <source>Added 1 Image to Library</source>
+        <translation type="obsolete">ライブラリに1画像追加</translation>
+    </message>
+    <message>
+        <source>Audios</source>
+        <comment>Audio category element</comment>
+        <translation type="obsolete">オーディオ</translation>
+    </message>
+    <message>
+        <source>Movies</source>
+        <comment>Movies category element</comment>
+        <translation type="obsolete">ムービー</translation>
+    </message>
+    <message>
+        <source>Pictures</source>
+        <comment>Pictures category element</comment>
+        <translation type="obsolete">写真</translation>
+    </message>
+    <message>
+        <source>Shapes</source>
+        <comment>Shapes category element</comment>
+        <translation type="obsolete">形状</translation>
+    </message>
+    <message>
+        <source>Applications</source>
+        <comment>Applications category element</comment>
+        <translation type="obsolete">アプリケーション</translation>
+    </message>
+    <message>
+        <source>Favorite</source>
+        <comment>Favorite category element</comment>
+        <translation type="obsolete">お気に入り</translation>
+    </message>
+    <message>
+        <source>Creating image thumbnail for %1.</source>
+        <translation type="obsolete">%1のサムネイル画像を作成</translation>
+    </message>
+    <message>
+        <source>Adding to page failed for item %1.</source>
+        <translation type="obsolete">%1のページへの追加に失敗 </translation>
+    </message>
+    <message>
+        <source>Interactivities</source>
+        <comment>Interactives category element</comment>
+        <translation type="obsolete">インタラクティブ</translation>
+    </message>
+    <message>
+        <source>ImportedImage</source>
+        <translation type="obsolete">インポートされた画像</translation>
+    </message>
+    <message>
+        <source>Animations</source>
+        <comment>Animations category element</comment>
+        <translation type="obsolete">動画</translation>
+    </message>
+    <message>
+        <source>Web Search</source>
+        <comment>Web search category element</comment>
+        <translation type="obsolete">ウエブに経験する</translation>
     </message>
 </context>
 <context>
@@ -1697,6 +1902,25 @@ Do you want to ignore these errors for this host?</source>
     </message>
 </context>
 <context>
+    <name>UBNewFolderDlg</name>
+    <message>
+        <source>Add new folder</source>
+        <translation type="obsolete">新規フォルダー追加</translation>
+    </message>
+    <message>
+        <source>New Folder name:</source>
+        <translation type="obsolete">新規フォルダー名： </translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <translation type="obsolete">追加</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">キャンセル</translation>
+    </message>
+</context>
+<context>
     <name>UBPersistenceManager</name>
     <message>
         <source>(copy)</source>
@@ -1723,7 +1947,7 @@ Do you want to ignore these errors for this host?</source>
     </message>
     <message>
         <source>German</source>
-        <translation>ドイツ語</translation>
+        <translation></translation>
     </message>
     <message>
         <source>French</source>
@@ -1846,23 +2070,15 @@ Do you want to ignore these errors for this host?</source>
     <name>UBSettings</name>
     <message>
         <source>Untitled Documents</source>
-        <translation>タイトルなしドキュメント</translation>
+        <translation type="obsolete">タイトルなしドキュメント</translation>
     </message>
     <message>
         <source>Trash</source>
-        <translation>ゴミ箱</translation>
+        <translation type="obsolete">ゴミ箱</translation>
     </message>
     <message>
         <source>My Movies</source>
         <translation>マイ・ムービー </translation>
-    </message>
-    <message>
-        <source>Group</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ungroup</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1877,25 +2093,25 @@ Do you want to ignore these errors for this host?</source>
     </message>
     <message>
         <source>Type task here ...</source>
-        <translation>ここに用事を書く...</translation>
+        <translation>〈ここへ用事を入力〉 </translation>
     </message>
 </context>
 <context>
     <name>UBTGMediaWidget</name>
     <message>
         <source>drop media here ...</source>
-        <translation>ここにメディアを下ろす...</translation>
+        <translation>〈ここへメディアトを下ろす〉 </translation>
     </message>
     <message>
         <source>Type title here...</source>
-        <translation>ここにタイトルを書く...</translation>
+        <translation>〈ここへタイトルを入力〉 </translation>
     </message>
 </context>
 <context>
     <name>UBTGUrlWidget</name>
     <message>
         <source>Insert link title here...</source>
-        <translation>ここにリンクのタイトルを書く...</translation>
+        <translation>〈ここへリンクを入力〉 </translation>
     </message>
 </context>
 <context>
@@ -1909,15 +2125,15 @@ Do you want to ignore these errors for this host?</source>
     <name>UBTeacherGuideEditionWidget</name>
     <message>
         <source>Type title here ...</source>
-        <translation>ここにタイトルを書く...</translation>
+        <translation>〈ここへタイトルを入力〉 </translation>
     </message>
     <message>
         <source>Type comment here ...</source>
-        <translation>ここにコメントを書く...</translation>
+        <translation>〈ここへコメントを入力〉 </translation>
     </message>
     <message>
         <source>Add an action</source>
-        <translation>為業を追加</translation>
+        <translation>行為を追加</translation>
     </message>
     <message>
         <source>Add a media</source>
@@ -1936,7 +2152,7 @@ Do you want to ignore these errors for this host?</source>
     <name>UBTeacherGuidePageZeroWidget</name>
     <message>
         <source>Type session title here ...</source>
-        <translation>ここにセッションのタイトルを書く...</translation>
+        <translation>〈ここへ会期のタイトルを入力〉 </translation>
     </message>
     <message>
         <source>Author(s)</source>
@@ -1944,7 +2160,7 @@ Do you want to ignore these errors for this host?</source>
     </message>
     <message>
         <source>Type authors here ...</source>
-        <translation>ここに作成者を書く...</translation>
+        <translation>〈ここへ作成者を入力〉 </translation>
     </message>
     <message>
         <source>Objective(s)</source>
@@ -1952,11 +2168,11 @@ Do you want to ignore these errors for this host?</source>
     </message>
     <message>
         <source>Type objectives here...</source>
-        <translation>ここに目標を書く...</translation>
+        <translation>〈ここへ目標を入力〉 </translation>
     </message>
     <message>
         <source>Resource indexing</source>
-        <translation>資源を表する</translation>
+        <translation>資源を分類</translation>
     </message>
     <message>
         <source>Keywords:</source>
@@ -1964,7 +2180,7 @@ Do you want to ignore these errors for this host?</source>
     </message>
     <message>
         <source>Type keywords here ...</source>
-        <translation>ここにキーワードを書く...</translation>
+        <translation>〈ここへキーワードを入力〉 </translation>
     </message>
     <message>
         <source>Level:</source>
@@ -1976,11 +2192,11 @@ Do you want to ignore these errors for this host?</source>
     </message>
     <message>
         <source>Type:</source>
-        <translation>タイプ:</translation>
+        <translation>類型:</translation>
     </message>
     <message>
         <source>Licence</source>
-        <translation>免許</translation>
+        <translation>ライセンス</translation>
     </message>
     <message>
         <source>Attribution CC BY</source>
@@ -2008,7 +2224,7 @@ Do you want to ignore these errors for this host?</source>
     </message>
     <message>
         <source>Public domain</source>
-        <translation>パブリックドメイン</translation>
+        <translation></translation>
     </message>
     <message>
         <source>Copyright</source>
@@ -2017,12 +2233,12 @@ Do you want to ignore these errors for this host?</source>
     <message>
         <source>Created the:
 </source>
-        <translation>発行日:</translation>
+        <translation>使った時:</translation>
     </message>
     <message>
         <source>Updated the:
 </source>
-        <translation>変更日:</translation>
+        <translation>更新した時:</translation>
     </message>
     <message>
         <source>Title page</source>
@@ -2143,6 +2359,13 @@ Please reboot the application to access the updated documents.</source>
     </message>
 </context>
 <context>
+    <name>UBW3CWidget</name>
+    <message>
+        <source>Web</source>
+        <translation type="obsolete">ウェブ</translation>
+    </message>
+</context>
+<context>
     <name>UBWebPluginWidget</name>
     <message>
         <source>Loading...</source>
@@ -2176,6 +2399,14 @@ Please reboot the application to access the updated documents.</source>
     <message>
         <source>Upload to YouTube in progress %1 %</source>
         <translation>YouTubeへアップロード進行中%1 % </translation>
+    </message>
+    <message>
+        <source>Open-Sankore</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OpenSankore</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2496,6 +2727,10 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:&apos;Lucida Grande&apos;; font-size:10pt;&quot;&gt;By clicking &apos;Upload,&apos; you certify that you own all rights to the content or that you are authorized by the owner to make the content publicly available on YouTube, and that it otherwise complies with the YouTube Terms of Service located at &lt;/span&gt;&lt;a href=&quot;http://www.youtube.com/t/terms&quot;&gt;&lt;span style=&quot; font-family:&apos;Lucida Grande&apos;; font-size:10pt; text-decoration: underline; color:#0000ff;&quot;&gt;http://www.youtube.com/t/terms&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation></translation>
     </message>
+    <message>
+        <source>Restore credentials on reboot</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>brushProperties</name>
@@ -2753,7 +2988,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message utf8="true">
         <source>Planète Sankoré ID</source>
-        <translation>Planète SankoréのID</translation>
+        <translation type="obsolete">Planète SankoréのID</translation>
     </message>
     <message>
         <source>User:</source>
@@ -3231,6 +3466,14 @@ p, li { white-space: pre-wrap; }
         <translation></translation>
     </message>
     <message utf8="true">
+        <source>Planète Sankoré ID for exporting file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restore credentials on reboot  </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message utf8="true">
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -3239,8 +3482,8 @@ p, li { white-space: pre-wrap; }
 &lt;tr&gt;
 &lt;td style=&quot;border: none;&quot;&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Open-Sankoré version 1.4 , Copyright (C) 2010-2012 Groupement d&apos;Intérêt Public pour l&apos;Education Numérique en Afrique (GIP ENA)&lt;br /&gt;&lt;br /&gt;Open-Sankoré est un logiciel libre : vous pouvez le redistribuer et/ou le modifier en respectant les termes de la Lesser GNU general Public Licence (GNU LGPL) telle que publiée par la Free Software Foundation en version 2 ou une version plus récente.&lt;br /&gt;Vous pouvez consulter et charger le code source du logiciel sur &lt;/span&gt;&lt;a href=&quot;https://github.com/Sankore&quot;&gt;&lt;span style=&quot; font-size:11pt; text-decoration: underline; color:#0000ff;&quot;&gt;&amp;lt;https://github.com/Sankore&amp;gt;&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;&lt;br /&gt;Open-Sankoré est distribué dans l&apos;espoir qu&apos;il sera utile, mais SANS AUCUNE GARANTIE, sans même la garantie implicite de COMMERCIALISATION ou D&apos;ADAPTATION A UN OBJET PARTICULIER.&lt;br /&gt;Veuillez consulter la licence Lesser GNU General Public Licence située dans l&apos;onglet Licences ou consulter le site &lt;/span&gt;&lt;a href=&quot;http://www.gnu.org/licenses/&quot;&gt;&lt;span style=&quot; font-size:11pt; text-decoration: underline; color:#0000ff;&quot;&gt;&amp;lt;http://www.gnu.org/licenses/&amp;gt;&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;.&lt;br /&gt;&lt;br /&gt;Open-Sankoré is free software: you can redistribute it and/or modify it under the terms of the Lesser GNU General Public License as published by the Free Software Foundation, either version 2 of the License, or any later version. You can find the source code of this software at &lt;/span&gt;&lt;a href=&quot;https://github.com/Sankore&quot;&gt;&lt;span style=&quot; font-size:11pt; text-decoration: underline; color:#0000ff;&quot;&gt;&amp;lt;https://github.com/Sankore&amp;gt;&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;&lt;br /&gt;Open-Sankoré is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the Lesser GNU General Public License below for more details.&lt;br /&gt;&lt;br /&gt;&lt;/span&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Contact : &lt;br /&gt;Groupement d&apos;Intérêt Public pour l&apos;Education Numérique en Afrique (GIP ENA)&lt;br /&gt;Délégation Interministérielle à l&apos;Education Numérique en Afrique&lt;br /&gt;20 Avenue Ségur Paris 75007&lt;br /&gt;Téléphone : 01 43 17 68 08&lt;br /&gt;email: &lt;/span&gt;&lt;a href=&quot;mailto:contact@sankore.org&quot;&gt;&lt;span style=&quot; font-size:11pt; text-decoration: underline; color:#0000ff;&quot;&gt;contact@sankore.org&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;&amp;quot;&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation></translation>
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Contact : &lt;br /&gt;Groupement d&apos;Intérêt Public pour l&apos;Education Numérique en Afrique (GIP ENA)&lt;br /&gt;Délégation Interministérielle à l&apos;Education Numérique en Afrique&lt;br /&gt;20 Avenue Ségur Paris 75007&lt;br /&gt;Téléphone : 01 43 17 68 08&lt;br /&gt;email: &lt;/span&gt;&lt;a href=&quot;mailto:contact@sankore.org&quot;&gt;&lt;span style=&quot; font-size:11pt; text-decoration: underline; color:#0000ff;&quot;&gt;contact@sankore.org&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;&amp;quot;&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message utf8="true">
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -3248,19 +3491,23 @@ p, li { white-space: pre-wrap; }
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Ubuntu&apos;; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Crédits police scolaire Open-Sankoré : &lt;/p&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;La police Andika Basic dispose d&apos;une licence Open Font License &lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt; © Sil international&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Source http://scripts.sil.org/cms/scripts/page.php?site_id=nrsi&amp;amp;id=andika&lt;/p&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Licence OFL (traduction française non officielle) http://fontforge.sourceforge.net/OFL-Unofficial-fr.html&lt;/p&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Les polices Ecolier suivantes sont l&apos;oeuvre de Jean-Marie Douteau et disposent d&apos;une licence OFL : &lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;- Ecolier Court &lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;- Ecolier Ligne Court&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt; © Jean-Marie Douteau (douteau.ecolier@sfr.fr)&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Source : http://douteau.ecolier.perso.sfr.fr/page_ecolier.htm&lt;/p&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Les polices Ecolier suivantes sont l&apos;oeuvre de Jean-Marie Douteau et disposent d&apos;une licence Creative Commons BY NC ND :&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;- Ecolier lignes pointillés&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;- Écolier pointillés&lt;/p&gt;
@@ -3268,24 +3515,27 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;- Écolier CP pointillés&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt; © Jean-Marie Douteau (douteau.ecolier@sfr.fr)&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Source : http://douteau.ecolier.perso.sfr.fr/page_ecolier.htm&lt;/p&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Les polices Cursive sont l&apos;oeuvre d&apos;Antoine Fetet (antoine.fetet@laposte.net) à partir d&apos;une police proposée par Jean-Claude Gineau&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Source : http://lps13.free.fr/contenu/construire/Cursive_standard.zip et http://fr.fontriver.com/font/gino_school_script/&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;L&apos;auteur en autorise l&apos;utilisation dans le cadre du logiciel open-Sankoré pour un usage non commercial&lt;/p&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Les polices Script (Ecole et CaseEcole) sont l&apos;oeuvre d&apos;Henri Rogelet&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Source : http://pointecole.free.fr/polices/SCRIPTCO.zip&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Source : http://pointecole.free.fr/polices/SCRIPTCA.zip&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt; © Henri Rogelet &amp;lt;h.rogelet@free.fr&amp;gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Autorisation pour un usage non commercial&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Source : http://pointecole.free.fr/polices.html&lt;/p&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;La police phonétique, Alphonet est l&apos;oeuvre d&apos;Henri Rogelet&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Source : http://pointecole.free.fr/polices/ALPHONET.zip&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt; © Henri Rogelet &amp;lt;h.rogelet@free.fr&amp;gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Autorisation pour un usage non commercial&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Source : http://pointecole.free.fr/polices.html&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

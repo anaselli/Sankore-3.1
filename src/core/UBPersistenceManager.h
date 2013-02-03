@@ -1,17 +1,24 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 #ifndef UBPERSISTENCEMANAGER_H_
 #define UBPERSISTENCEMANAGER_H_
@@ -47,7 +54,7 @@ class UBPersistenceManager : public QObject
         static void destroy();
 
         virtual UBDocumentProxy* createDocument(const QString& pGroupName = "", const QString& pName = "", bool withEmptyPage = true);
-        virtual UBDocumentProxy* createDocumentFromDir(const QString& pDocumentDirectory, const QString& pGroupName = "", const QString& pName = "", bool withEmptyPage = false);
+        virtual UBDocumentProxy* createDocumentFromDir(const QString& pDocumentDirectory, const QString& pGroupName = "", const QString& pName = "", bool withEmptyPage = false, bool addTitlePage = false);
 
         virtual UBDocumentProxy* persistDocumentMetadata(UBDocumentProxy* pDocumentProxy);
 
@@ -62,7 +69,7 @@ class UBPersistenceManager : public QObject
         virtual void persistDocumentScene(UBDocumentProxy* pDocumentProxy,
                 UBGraphicsScene* pScene, const int pSceneIndex);
 
-        virtual UBGraphicsScene* createDocumentSceneAt(UBDocumentProxy* pDocumentProxy, int index);
+        virtual UBGraphicsScene* createDocumentSceneAt(UBDocumentProxy* pDocumentProxy, int index, bool useUndoRedoStack = true);
 
         virtual void insertDocumentSceneAt(UBDocumentProxy* pDocumentProxy, UBGraphicsScene* scene, int index);
 
@@ -79,13 +86,14 @@ class UBPersistenceManager : public QObject
         virtual QStringList allVideos(const QDir& dir);
         virtual QStringList allWidgets(const QDir& dir);
 
-        virtual QString generateUniqueDocumentPath();
+        QString generateUniqueDocumentPath();
+        QString generateUniqueDocumentPath(const QString& baseFolder);
 
         QString teacherGuideAbsoluteObjectPath(UBDocumentProxy* pDocumentProxy);
         QString addObjectToTeacherGuideDirectory(UBDocumentProxy* proxy, QString pPath);
         QString addWidgetToTeacherGuideDirectory(UBDocumentProxy* pDocumentProxy, QString pPath);
 
-        virtual void addDirectoryContentToDocument(const QString& documentRootFolder, UBDocumentProxy* pDocument);
+        bool addDirectoryContentToDocument(const QString& documentRootFolder, UBDocumentProxy* pDocument);
 
         virtual void upgradeDocumentIfNeeded(UBDocumentProxy* pDocumentProxy);
 
@@ -116,19 +124,16 @@ class UBPersistenceManager : public QObject
 
         void documentCreated(UBDocumentProxy* pDocumentProxy);
         void documentMetadataChanged(UBDocumentProxy* pDocumentProxy);
-        void documentCommitted(UBDocumentProxy* pDocumentProxy);
         void documentWillBeDeleted(UBDocumentProxy* pDocumentProxy);
 
         void documentSceneCreated(UBDocumentProxy* pDocumentProxy, int pIndex);
-        void documentSceneMoved(UBDocumentProxy* pDocumentProxy, int pIndex);
         void documentSceneWillBeDeleted(UBDocumentProxy* pDocumentProxy, int pIndex);
-        void documentSceneDeleted(UBDocumentProxy* pDocumentProxy, int pDeletedIndex);
 
     private:
 
         int sceneCount(const UBDocumentProxy* pDocumentProxy);
 
-        int sceneCountInDir(const QString& pPath);
+        static QStringList getSceneFileNames(const QString& folder);
 
         QList<QPointer<UBDocumentProxy> > allDocumentProxies();
 

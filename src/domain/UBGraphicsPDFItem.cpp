@@ -1,17 +1,24 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 #include "UBGraphicsPDFItem.h"
 
@@ -28,21 +35,20 @@ UBGraphicsPDFItem::UBGraphicsPDFItem(PDFRenderer *renderer, int pageNumber, QGra
 {
     setData(UBGraphicsItemData::ItemLayerType, UBItemLayerType::Object); //deprecated
     setData(UBGraphicsItemData::itemLayerType, QVariant(itemLayerType::BackgroundItem)); //Necessary to set if we want z value to be assigned correctly
-    mDelegate = new UBGraphicsItemDelegate(this,0, true, false, false);
-    mDelegate->init();
+
+    setDelegate(new UBGraphicsItemDelegate(this,0, true, false, false));
+    Delegate()->init();
 }
 
 
 UBGraphicsPDFItem::~UBGraphicsPDFItem()
 {
-    if (mDelegate)
-        delete mDelegate;
 }
 
 
 QVariant UBGraphicsPDFItem::itemChange(GraphicsItemChange change, const QVariant &value)
 {
-    QVariant newValue = mDelegate->itemChange(change, value);
+    QVariant newValue = Delegate()->itemChange(change, value);
     return GraphicsPDFItem::itemChange(change, newValue);
 }
 
@@ -54,7 +60,7 @@ void UBGraphicsPDFItem::setUuid(const QUuid &pUuid)
 
 void UBGraphicsPDFItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-    if (mDelegate->mousePressEvent(event))
+    if (Delegate()->mousePressEvent(event))
     {
         // NOOP
     }
@@ -67,7 +73,7 @@ void UBGraphicsPDFItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
 void UBGraphicsPDFItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-    if (mDelegate->mouseMoveEvent(event))
+    if (Delegate()->mouseMoveEvent(event))
     {
         // NOOP
     }
@@ -80,7 +86,7 @@ void UBGraphicsPDFItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 
 void UBGraphicsPDFItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
-    mDelegate->mouseReleaseEvent(event);
+    Delegate()->mouseReleaseEvent(event);
     GraphicsPDFItem::mouseReleaseEvent(event);
 }
 
@@ -131,13 +137,6 @@ UBGraphicsScene* UBGraphicsPDFItem::scene()
 }
 
 
-void UBGraphicsPDFItem::remove()
-{
-    if (mDelegate)
-        mDelegate->remove(true);
-}
-
-
 UBGraphicsPixmapItem* UBGraphicsPDFItem::toPixmapItem() const
 {   
     QPixmap pixmap(mRenderer->pageSizeF(mPageNumber).toSize());
@@ -155,3 +154,5 @@ UBGraphicsPixmapItem* UBGraphicsPDFItem::toPixmapItem() const
 
     return pixmapItem;
 }
+
+

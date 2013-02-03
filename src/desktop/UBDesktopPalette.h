@@ -1,9 +1,24 @@
 /*
- * UNWindow.h
+ * Copyright (C) 2012 Webdoc SA
  *
- *  Created on: Jan 9, 2009
- *      Author: julienbachmann
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 #ifndef UBUNINOTESWINDOW_H_
 #define UBUNINOTESWINDOW_H_
@@ -12,6 +27,7 @@
 #include <QHideEvent>
 
 #include "gui/UBActionPalette.h"
+#include "gui/UBRightPalette.h"
 
 /**
  * The uninotes window. This window is controlled by UBUninotesWindowController.
@@ -21,7 +37,7 @@ class UBDesktopPalette : public UBActionPalette
     Q_OBJECT;
 
     public:
-        UBDesktopPalette(QWidget *parent = 0);
+        UBDesktopPalette(QWidget *parent, UBRightPalette* rightPalette);
         virtual ~UBDesktopPalette();
 
         void disappearForCapture();
@@ -41,16 +57,18 @@ class UBDesktopPalette : public UBActionPalette
     public slots:
 
         void showHideClick(bool checked);
-
         void updateShowHideState(bool pShowEnabled);
         void setShowHideButtonVisible(bool visible);
         void setDisplaySelectButtonVisible(bool show);
-	void minimizeMe(eMinimizedLocation location);
+	    void minimizeMe(eMinimizedLocation location);
         void maximizeMe();
+        void parentResized();
 
 protected:
         void showEvent(QShowEvent *event);
         void hideEvent(QHideEvent *event);
+
+        virtual int getParentRightOffset();
 
     private:
         QAction *mShowHideAction;
@@ -59,6 +77,9 @@ protected:
         QAction *mActionUniboard;
         QAction *mActionCustomSelect;
         QAction* mActionTest;
+
+
+        UBRightPalette* rightPalette;
 
     signals:
         void stylusToolChanged(int tool);

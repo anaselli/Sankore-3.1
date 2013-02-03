@@ -1,17 +1,24 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 #ifndef UBBOARDCONTROLLER_H_
 #define UBBOARDCONTROLLER_H_
@@ -40,6 +47,7 @@ class UBGraphicsAudioItem;
 class UBGraphicsWidgetItem;
 class UBBoardPaletteManager;
 class UBItem;
+class UBGraphicsItem;
 
 
 class UBBoardController : public UBDocumentContainer
@@ -158,10 +166,13 @@ class UBBoardController : public UBDocumentContainer
 
         void moveSceneToIndex(int source, int target);
         void duplicateScene(int index);
-        void duplicateItem(UBItem *item);
+        UBGraphicsItem *duplicateItem(UBItem *item, bool bAsync = true);
         void deleteScene(int index);
 
         bool cacheIsVisible() {return mCacheWidgetIsEnabled;}
+
+        QString actionGroupText(){ return mActionGroupText;}
+        QString actionUngroupText(){ return mActionUngroupText;}
 
     public slots:
         void showDocumentsDialog();
@@ -189,8 +200,8 @@ class UBBoardController : public UBDocumentContainer
         void firstScene();
         void lastScene();
         void groupButtonClicked();
-        void downloadURL(const QUrl& url, const QPointF& pPos = QPointF(0.0, 0.0), const QSize& pSize = QSize(), bool isBackground = false, bool internalData = false);
-        UBItem *downloadFinished(bool pSuccess, QUrl sourceUrl, QString pHeader,
+        void downloadURL(const QUrl& url, QString contentSourceUrl = QString(), const QPointF& pPos = QPointF(0.0, 0.0), const QSize& pSize = QSize(), bool isBackground = false, bool internalData = false);
+        UBItem *downloadFinished(bool pSuccess, QUrl sourceUrl, QUrl contentUrl, QString pHeader,
                                  QByteArray pData, QPointF pPos, QSize pSize,
                                  bool isBackground = false, bool internalData = false);
         void changeBackground(bool isDark, bool isCrossed);
@@ -199,14 +210,15 @@ class UBBoardController : public UBDocumentContainer
         void hideMessage();
         void setDisabled(bool disable);
         void setColorIndex(int pColorIndex);
+        void removeTool(UBToolWidget* toolWidget);
         void hide();
         void show();
         void setWidePageSize(bool checked);
         void setRegularPageSize(bool checked);
         void stylusToolChanged(int tool);
         void grabScene(const QRectF& pSceneRect);
-        UBGraphicsMediaItem* addVideo(const QUrl& pUrl, bool startPlay, const QPointF& pos);
-        UBGraphicsMediaItem* addAudio(const QUrl& pUrl, bool startPlay, const QPointF& pos);
+        UBGraphicsMediaItem* addVideo(const QUrl& pUrl, bool startPlay, const QPointF& pos, bool bUseSource = false);
+        UBGraphicsMediaItem* addAudio(const QUrl& pUrl, bool startPlay, const QPointF& pos, bool bUseSource = false);
         UBGraphicsWidgetItem *addW3cWidget(const QUrl& pUrl, const QPointF& pos);
 
         void cut();
@@ -224,8 +236,6 @@ class UBBoardController : public UBDocumentContainer
 
     signals:
         void newPageAdded();
-        void activeSceneWillBePersisted();
-        void activeSceneWillChange();
         void activeSceneChanged();
         void zoomChanged(qreal pZoomFactor);
         void systemScaleFactorChanged(qreal pSystemScaleFactor);
@@ -280,6 +290,10 @@ class UBBoardController : public UBDocumentContainer
         QMap<QAction*, QPair<QString, QString> > mActionTexts;
         bool mCacheWidgetIsEnabled;
         QGraphicsItem* mLastCreatedItem;
+        int mDeletingSceneIndex;
+        int mMovingSceneIndex;
+        QString mActionGroupText;
+        QString mActionUngroupText;
 
     private slots:
         void stylusToolDoubleClicked(int tool);

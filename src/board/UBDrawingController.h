@@ -1,17 +1,24 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 #ifndef UBDRAWINGCONTROLLER_H_
 #define UBDRAWINGCONTROLLER_H_
@@ -21,13 +28,6 @@
 #include "core/UB.h"
 
 class UBAbstractDrawRuler;
-
-typedef enum{
-    eDrawingMode_Artistic,
-    eDrawingMode_Vector
-}eDrawingMode;
-
-#define DRAWING_MODE    eDrawingMode_Vector
 
 class UBDrawingController : public QObject
 {
@@ -56,8 +56,6 @@ class UBDrawingController : public QObject
         void setPenColor(bool onDarkBackground, const QColor& color, int pIndex);
         void setMarkerColor(bool onDarkBackground, const QColor& color, int pIndex);
         void setMarkerAlpha(qreal alpha);
-        void setDrawingMode(eDrawingMode mode);
-        eDrawingMode drawingMode();
 
         UBAbstractDrawRuler* mActiveRuler;
 
@@ -86,7 +84,6 @@ class UBDrawingController : public QObject
     private:
         UBStylusTool::Enum mStylusTool;
         UBStylusTool::Enum mLatestDrawingTool;
-        eDrawingMode mDrawingMode;
         bool mIsDesktopMode;
 
         static UBDrawingController* sDrawingController;

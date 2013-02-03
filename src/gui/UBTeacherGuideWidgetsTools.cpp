@@ -1,17 +1,24 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 #include <QTreeWidget>
 #include <QVBoxLayout>
@@ -24,6 +31,9 @@
 #include <QApplication>
 #include <QDomElement>
 #include <QWebFrame>
+#include <QTextDocument>
+#include <QTextBlock>
+#include <QTextCursor>
 
 #include "UBTeacherGuideWidgetsTools.h"
 
@@ -83,7 +93,6 @@ UBTGActionWidget::UBTGActionWidget(QTreeWidgetItem* widget, QWidget* parent, con
     mpTask = new UBTGAdaptableText(widget,this);
     mpTask->setPlaceHolderText(tr("Type task here ..."));
     mpTask->setAcceptRichText(true);
-    mpTask->setTextColor(QColor().green());
     mpTask->setObjectName("ActionWidgetTaskTextEdit");
     mpLayout->addWidget(mpOwner);
     mpLayout->addWidget(mpTask);
@@ -120,6 +129,7 @@ UBTGAdaptableText::UBTGAdaptableText(QTreeWidgetItem* widget, QWidget* parent, c
   , mMinimumHeight(0)
   , mHasPlaceHolder(false)
   , mIsUpdatingSize(false)
+  , mMaximumLength(0)
 {
     setObjectName(name);
     connect(this,SIGNAL(textChanged()),this,SLOT(onTextChanged()));
@@ -131,6 +141,11 @@ UBTGAdaptableText::UBTGAdaptableText(QTreeWidgetItem* widget, QWidget* parent, c
 
 }
 
+void UBTGAdaptableText::setMaximumLength(int length)
+{
+    mMaximumLength = length;
+}
+
 void UBTGAdaptableText::setPlaceHolderText(QString text)
 {
     mHasPlaceHolder = true;
@@ -138,42 +153,30 @@ void UBTGAdaptableText::setPlaceHolderText(QString text)
     // the space addition is to make this string unique and check against it to know
     // if we are talking about a typed string or the placeholder string
     mPlaceHolderText = text + "     ";
-    setTextColor(QColor(Qt::lightGray));
     setPlainText(mPlaceHolderText);
-}
-
-void UBTGAdaptableText::keyPressEvent(QKeyEvent* e)
-{
-    if(isReadOnly()){
-        // this is important if you set a placeholder. In this case even if the text field is readonly the
-        // keypressed event came here. So if you don't ignore it you'll have a flick on the text zone
-        e->ignore();
-        return;
-    }
-
-    if(toPlainText() == mPlaceHolderText){
-        setPlainText("");
-    }
-    setTextColor(QColor(Qt::black));
-    QTextEdit::keyPressEvent(e);
 }
 
 void UBTGAdaptableText::keyReleaseEvent(QKeyEvent* e)
 {
     QTextEdit::keyReleaseEvent(e);
 
-    if(toPlainText().isEmpty()){
-        setTextColor(QColor(Qt::lightGray));
-        setPlainText(mPlaceHolderText);
+    if(mMaximumLength && toPlainText().length()>mMaximumLength){
+        setPlainText(toPlainText().left(mMaximumLength));
+        QTextCursor tc(document());
+        tc.setPosition(mMaximumLength);
+        setTextCursor(tc);
     }
 }
 
 void UBTGAdaptableText::showEvent(QShowEvent* e)
 {
     Q_UNUSED(e);
-    if(!mIsUpdatingSize && mHasPlaceHolder && toPlainText().isEmpty())
-        setPlainText(mPlaceHolderText);
+    if(!mIsUpdatingSize && !hasFocus() && mHasPlaceHolder && toPlainText().isEmpty() && !isReadOnly()){
+    	setTextColor(QColor(Qt::lightGray));
+    	setPlainText(mPlaceHolderText);
+    }
     else
+    	// If the teacherguide is collapsed, don't updated the size. Or set the size as the expanded size
         onTextChanged();
 }
 
@@ -189,15 +192,18 @@ QString UBTGAdaptableText::text()
 void UBTGAdaptableText::onTextChanged()
 {
     qreal documentSize = document()->size().height();
-    if(height() == documentSize + mBottomMargin)
-        return;
+    if(height() == documentSize + mBottomMargin){
+    	return;
+    }
     mIsUpdatingSize = true;
 
 
-    if(documentSize < mMinimumHeight)
-        setFixedHeight(mMinimumHeight);
-    else
-        setFixedHeight(documentSize+mBottomMargin);
+    if(documentSize < mMinimumHeight){
+    	setFixedHeight(mMinimumHeight);
+    }
+    else{
+    	setFixedHeight(documentSize+mBottomMargin);
+    }
 
     updateGeometry();
     //to trig a resize on the tree widget item
@@ -209,6 +215,7 @@ void UBTGAdaptableText::onTextChanged()
     }
     mIsUpdatingSize = false;
 }
+
 void UBTGAdaptableText::setInitialText(const QString& text)
 {
     setText(text);
@@ -229,6 +236,48 @@ void UBTGAdaptableText::bottomMargin(int newValue)
     onTextChanged();
 }
 
+void UBTGAdaptableText::focusInEvent(QFocusEvent* e)
+{
+	if(isReadOnly()){
+		e->ignore();
+	}
+	managePlaceholder(true);
+	QTextEdit::focusInEvent(e);
+}
+
+void UBTGAdaptableText::focusOutEvent(QFocusEvent* e)
+{
+	managePlaceholder(false);
+	QTextEdit::focusOutEvent(e);
+}
+
+void UBTGAdaptableText::managePlaceholder(bool focus)
+{
+	if(focus){
+		if(toPlainText() == mPlaceHolderText){
+			setTextColor(QColor(Qt::black));
+			setPlainText("");
+		}
+		setCursorToTheEnd();
+	}
+	else{
+		if(toPlainText().isEmpty()){
+			setTextColor(QColor(Qt::lightGray));
+			setPlainText(mPlaceHolderText);
+		}
+	}
+}
+
+void UBTGAdaptableText::setCursorToTheEnd()
+{
+	QTextDocument* doc = document();
+	if(NULL != doc){
+		QTextBlock block = doc->lastBlock();
+		QTextCursor cursor(doc);
+		cursor.setPosition(block.position() + block.length() - 1);
+		setTextCursor(cursor);
+	}
+}
 
 /***************************************************************************
  *                      class   UBTGDraggableWeb                           *
@@ -285,6 +334,7 @@ UBTGMediaWidget::UBTGMediaWidget(QTreeWidgetItem* widget, QWidget* parent,const 
   , mpDropMeWidget(NULL)
   , mpWorkWidget(NULL)
   , mpLayout(NULL)
+  , mpMediaLayout(NULL)
   , mpTitle(NULL)
   , mpMediaLabelWidget(NULL)
   , mpMediaWidget(NULL)
@@ -292,6 +342,7 @@ UBTGMediaWidget::UBTGMediaWidget(QTreeWidgetItem* widget, QWidget* parent,const 
   , mMediaPath(QString(""))
   , mIsPresentationMode(false)
   , mIsInitializationMode(false)
+  , mMediaWidgetHeight(150)
 {
     setObjectName(name);
     mpDropMeWidget = new QLabel();
@@ -309,6 +360,7 @@ UBTGMediaWidget::UBTGMediaWidget(QString mediaPath, QTreeWidgetItem* widget, QWi
   , mpDropMeWidget(NULL)
   , mpWorkWidget(NULL)
   , mpLayout(NULL)
+  , mpMediaLayout(NULL)
   , mpTitle(NULL)
   , mpMediaLabelWidget(NULL)
   , mpMediaWidget(NULL)
@@ -316,6 +368,7 @@ UBTGMediaWidget::UBTGMediaWidget(QString mediaPath, QTreeWidgetItem* widget, QWi
   , mIsPresentationMode(true)
   , mMediaType("")
   , mIsInitializationMode(false)
+  , mMediaWidgetHeight(150)
 {
     setObjectName(name);
     mMediaPath = UBApplication::boardController->selectedDocument()->persistencePath()+ "/" + mediaPath;
@@ -330,6 +383,7 @@ UBTGMediaWidget::~UBTGMediaWidget()
     DELETEPTR(mpMediaLabelWidget);
     DELETEPTR(mpMediaWidget);
     DELETEPTR(mpWebView);
+    DELETEPTR(mpMediaLayout);
     DELETEPTR(mpLayout);
 
     removeWidget(mpDropMeWidget);
@@ -418,9 +472,8 @@ void UBTGMediaWidget::createWorkWidget(bool forceFlashMediaType)
 
         mpMediaLabelWidget = new QLabel();
         QPixmap pixmap = QPixmap(mMediaPath);
-        pixmap = pixmap.scaledToWidth(mpTreeWidgetItem->treeWidget()->size().width());
+        pixmap = pixmap.scaledToHeight(mMediaWidgetHeight);
         mpMediaLabelWidget->setPixmap(pixmap);
-        mpMediaLabelWidget->setScaledContents(true);
     }
     else if(mimeType.contains("widget") && !forceFlashMediaType){
         mMediaType = "w3c";
@@ -470,31 +523,43 @@ void UBTGMediaWidget::createWorkWidget(bool forceFlashMediaType)
     if(setMedia){
         setAcceptDrops(false);
         mpWorkWidget = new QWidget(this);
-        mpLayout = new QVBoxLayout(mpWorkWidget);
         if(!mIsPresentationMode){
+            mpLayout = new QVBoxLayout(mpWorkWidget);
             mpTitle = new UBTGAdaptableText(mpTreeWidgetItem,mpWorkWidget);
             mpTitle->setPlaceHolderText(tr("Type title here..."));
             mpLayout->addWidget(mpTitle);
+            mpMediaLayout = new QHBoxLayout;
+            mpLayout->addLayout(mpMediaLayout);
+            mpWorkWidget->setLayout(mpLayout);
         }
+        else{
+            mpMediaLayout = new QHBoxLayout(mpWorkWidget);
+            mpWorkWidget->setLayout(mpMediaLayout);
+        }
+        
+        mpMediaLayout->addStretch(1);
+        
         if(mpMediaLabelWidget){
-            mpMediaLabelWidget->setMaximumHeight(width());
+            mpMediaLabelWidget->setFixedHeight(mMediaWidgetHeight);
             mpMediaLabelWidget->setParent(mpWorkWidget);
-            mpLayout->addWidget(mpMediaLabelWidget);
+            mpMediaLayout->addWidget(mpMediaLabelWidget);
         }
         else if (mpMediaWidget){
-            mpMediaWidget->setMaximumHeight(width());
+            mpMediaWidget->setFixedHeight(mMediaWidgetHeight);
             mpMediaWidget->setParent(mpWorkWidget);
-            mpLayout->addWidget(mpMediaWidget);
+            mpMediaLayout->addWidget(mpMediaWidget);
         }
         else if (mpWebView){
-            mpWebView->setMaximumHeight(width());
+            mpWebView->setFixedHeight(mMediaWidgetHeight);
             mpWebView->setParent(mpWorkWidget);
-            mpLayout->addWidget(mpWebView);
+            mpMediaLayout->addWidget(mpWebView);
             mpWebView->show();
         }
-        mpWorkWidget->setLayout(mpLayout);
+        mpMediaLayout->addStretch(1);
         addWidget(mpWorkWidget);
         setCurrentWidget(mpWorkWidget);
+        mpWorkWidget->show();
+
     }
 }
 
@@ -527,8 +592,7 @@ void UBTGMediaWidget::mousePressEvent(QMouseEvent *event)
 {
     if (!mIsPresentationMode)
         event->ignore();
-     else{
-
+    else{
         QDrag *drag = new QDrag(this);
         QMimeData *mimeData = new QMimeData();
         QList<QUrl> urlList;

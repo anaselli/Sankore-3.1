@@ -1,16 +1,22 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
@@ -200,11 +206,11 @@ void UBTrapFlashController::createWidget()
         // flash widget
         UBWebKitUtils::HtmlObject selectedObject = mAvailableFlashes.at(selectedIndex - 1);
         UBApplication::applicationController->showBoard();
-        UBApplication::boardController->downloadURL(QUrl(selectedObject.source), QPoint(0, 0), QSize(selectedObject.width, selectedObject.height));
+        UBApplication::boardController->downloadURL(QUrl(selectedObject.source), QString(), QPoint(0, 0), QSize(selectedObject.width, selectedObject.height));
     }
 
     QString freezedWidgetPath = UBPlatformUtils::applicationResourcesDirectory() + "/etc/freezedWidgetWrapper.html";
-	mTrapFlashUi->webView->load(QUrl::fromLocalFile(freezedWidgetPath));
+    mTrapFlashUi->webView->load(QUrl::fromLocalFile(freezedWidgetPath));
 
     mTrapFlashDialog->hide();
 }
@@ -370,6 +376,7 @@ QString UBTrapFlashController::generateFullPageHtml(const QString& pDirPath, boo
 QString UBTrapFlashController::generateHtml(const UBWebKitUtils::HtmlObject& pObject,
         const QString& pDirPath, bool pGenerateFile)
 {
+    qDebug() << pObject.source;
     QUrl objectUrl(pObject.source);
     QString objectFullUrl = pObject.source;
     if (!objectUrl.isValid())
@@ -471,9 +478,13 @@ QString UBTrapFlashController::generateHtml(const UBWebKitUtils::HtmlObject& pOb
 
 QString UBTrapFlashController::widgetNameForObject(UBWebKitUtils::HtmlObject pObject)
 {
-    int lastSlashIndex = pObject.source.lastIndexOf("/");
+    QString url = pObject.source;
+    int parametersIndex = url.indexOf("?");
+    if(parametersIndex != -1)
+        url = url.left(parametersIndex);
+    int lastSlashIndex = url.lastIndexOf("/");
 
-    QString result = pObject.source.right(pObject.source.length() - lastSlashIndex);
+    QString result = url.right(url.length() - lastSlashIndex);
     result = UBFileSystemUtils::cleanName(result);
 
     return result;

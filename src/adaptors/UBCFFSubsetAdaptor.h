@@ -1,17 +1,24 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 #ifndef UBCFFSUBSETADAPTOR_H
 #define UBCFFSUBSETADAPTOR_H
@@ -74,6 +81,7 @@ private:
         QDomDocument mDOMdoc;
         QDomNode mCurrentDOMElement;
         QHash<QString, UBGraphicsItem*> persistedItems;
+        QMap<QString, QString> mRefToUuidMap;
         QDir mTmpFlashDir;
 
         void addItemToGSection(QGraphicsItem *item);
@@ -102,7 +110,7 @@ private:
         inline bool parseSvgFlash(const QDomElement &element);
         inline bool parseSvgAudio(const QDomElement &element);
         inline bool parseSvgVideo(const QDomElement &element);
-        inline bool parseIwbGroup(QDomElement &parent);
+        inline UBGraphicsGroupContainerItem *parseIwbGroup(QDomElement &parent);
         inline bool parseIwbElement(QDomElement &element);
         inline void parseTSpan(const QDomElement &parent, QPainter &painter
                                , qreal &curX, qreal &curY, qreal &width, qreal &height, qreal &linespacing, QRectF &lastDrawnTextBoundingRect

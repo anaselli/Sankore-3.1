@@ -1,3 +1,25 @@
+/*
+ * Copyright (C) 2012 Webdoc SA
+ *
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
 #ifndef UBFEATURESCONTROLLER_H
 #define UBFEATURESCONTROLLER_H
 
@@ -33,7 +55,7 @@ class UBFeaturesComputingThread : public QThread
 public:
     explicit UBFeaturesComputingThread(QObject *parent = 0);
     virtual ~UBFeaturesComputingThread();
-        void compute(const QList<QPair<QUrl, QString> > &pScanningData, QSet<QUrl> *pFavoritesSet);
+        void compute(const QList<QPair<QUrl, UBFeature> > &pScanningData, QSet<QUrl> *pFavoritesSet);
 
 protected:
     void run();
@@ -51,16 +73,16 @@ public slots:
 
 private:
     void scanFS(const QUrl & currentPath, const QString & currVirtualPath, const QSet<QUrl> &pFavoriteSet);
-    void scanAll(QList<QPair<QUrl, QString> > pScanningData, const QSet<QUrl> &pFavoriteSet);
+    void scanAll(QList<QPair<QUrl, UBFeature> > pScanningData, const QSet<QUrl> &pFavoriteSet);
     int featuresCount(const QUrl &pPath);
-    int featuresCountAll(QList<QPair<QUrl, QString> > pScanningData);
+    int featuresCountAll(QList<QPair<QUrl, UBFeature> > pScanningData);
 
 private:
     QMutex mMutex;
     QWaitCondition mWaitCondition;
     QUrl mScanningPath;
     QString mScanningVirtualPath;
-    QList<QPair<QUrl, QString> > mScanningData;
+    QList<QPair<QUrl, UBFeature> > mScanningData;
     QSet<QUrl> mFavoriteSet;
     bool restart;
     bool abort;
@@ -73,14 +95,14 @@ enum UBFeatureElementType
     FEATURE_VIRTUALFOLDER,
     FEATURE_FOLDER,
     FEATURE_INTERACTIVE,
-	FEATURE_INTERNAL,
+    FEATURE_INTERNAL,
     FEATURE_ITEM,
     FEATURE_AUDIO,
     FEATURE_VIDEO,
     FEATURE_IMAGE,
     FEATURE_FLASH,
-	FEATURE_TRASH,
-	FEATURE_FAVORITE,
+    FEATURE_TRASH,
+    FEATURE_FAVORITE,
     FEATURE_SEARCH,
     FEATURE_INVALID
 };
@@ -94,6 +116,7 @@ public:
 //    UBFeature();
     virtual ~UBFeature();
     QString getName() const { return mName; }
+    QString getDisplayName() const {return mDisplayName;}
     QImage getThumbnail() const {return mThumbnail;}
     QString getVirtualPath() const { return virtualDir; }
 	//QString getPath() const { return mPath; };
@@ -105,6 +128,7 @@ public:
     UBFeatureElementType getType() const { return elementType; }
 
 	bool isFolder() const;
+    bool allowedCopy() const;
 	bool isDeletable() const;
     bool inTrash() const;
 	bool operator ==( const UBFeature &f )const;
@@ -112,11 +136,17 @@ public:
 	const QMap<QString,QString> & getMetadata() const { return metadata; }
 	void setMetadata( const QMap<QString,QString> &data ) { metadata = data; }
 
+
+private:
+    QString getNameFromVirtualPath(const QString &pVirtPath);
+    QString getVirtualDirFromVirtualPath(const QString &pVirtPath);
+
 private:
     QString virtualDir;
     QString virtualPath;
     QImage mThumbnail;
     QString mName;
+    QString mDisplayName;
 	QUrl mPath;
     UBFeatureElementType elementType;
     QMap<QString,QString> metadata;
@@ -144,7 +174,7 @@ public:
     void setCurrentElement( const UBFeature &elem ) {currentElement = elem;}
 	const UBFeature & getTrashElement () const { return trashElement; }
 
-    void addDownloadedFile( const QUrl &sourceUrl, const QByteArray &pData );
+    void addDownloadedFile( const QUrl &sourceUrl, const QByteArray &pData, const QString pContentSource, const QString pTitle );
 
 	UBFeature moveItemToFolder( const QUrl &url, const UBFeature &destination );
 	UBFeature copyItemToFolder( const QUrl &url, const UBFeature &destination );
@@ -179,8 +209,21 @@ public:
 
     static const QString virtualRootName;
 
-    void assignFeaturesListVeiw(UBFeaturesListView *pList);
+    void assignFeaturesListView(UBFeaturesListView *pList);
     void assignPathListView(UBFeaturesListView *pList);
+
+public:
+    static const QString rootPath;
+    static const QString audiosPath;
+    static const QString moviesPath;
+    static const QString picturesPath;
+    static const QString appPath;
+    static const QString flashPath;
+    static const QString shapesPath;
+    static const QString interactPath;
+    static const QString trashPath;
+    static const QString favoritePath;
+    static const QString webSearchPath;
 
 signals:
     void maxFilesCountEvaluated(int pLimit);
@@ -214,6 +257,8 @@ private:
 	//void addImageToCurrentPage( const QString &path );
 	void loadFavoriteList();
 	void saveFavoriteList();
+    QString uniqNameForFeature(const UBFeature &feature, const QString &pName = "Imported", const QString &pExtention = "") const;
+    QString adjustName(const QString &str);
 
     QList <UBFeature> *featuresList;
 
@@ -235,17 +280,7 @@ private:
 	QUrl trashDirectoryPath;
 	QUrl mLibSearchDirectoryPath;
 
-	QString rootPath;
-	QString audiosPath;
-	QString moviesPath;
-	QString picturesPath;
-	QString appPath;
-	QString flashPath;
-	QString shapesPath;
-	QString interactPath;
-	QString trashPath;
-	QString favoritePath;
-    QString webSearchPath;
+
 
 	int mLastItemOffsetIndex;
 	UBFeature currentElement;
@@ -266,6 +301,7 @@ private:
 public:
     UBFeature trashElement;
     UBFeature getDestinationFeatureForUrl( const QUrl &url );
+    UBFeature getDestinationFeatureForMimeType(const QString &pMmimeType);
 
 };
 

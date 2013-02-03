@@ -1,17 +1,25 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+
 #include "UBKeyboardPalette.h"
 
 #include <stdio.h>
@@ -57,22 +65,6 @@ void UBKeyboardPalette::createCtrlButtons()
         ctrlButtons[8] = new UBLocaleButton(this);
 }
 
-void SetMacLocaleByIdentifier(const QString& id)
-{
-	const char * strName = id.toAscii().data();
-	CFStringRef iName = CFStringCreateWithCString(NULL, strName, kCFStringEncodingMacRoman );
-
-	CFStringRef keys[] = { kTISPropertyInputSourceCategory, kTISPropertyInputSourceID };          
-	CFStringRef values[] = { kTISCategoryKeyboardInputSource, iName };          
-	CFDictionaryRef dict = CFDictionaryCreate(NULL, (const void **)keys, (const void **)values, 2, NULL, NULL);  
-	CFArrayRef kbds = TISCreateInputSourceList(dict, true);          
-	if (CFArrayGetCount(kbds)!=0)
-	{
-		TISInputSourceRef klRef =  (TISInputSourceRef)CFArrayGetValueAtIndex(kbds, 0);  
-		if (klRef!=NULL)
-			TISSelectInputSource(klRef);
-	}
-}
 
 
 void UBKeyboardPalette::checkLayout()
@@ -107,6 +99,6 @@ void UBKeyboardPalette::onActivated(bool)
 
 void UBKeyboardPalette::onLocaleChanged(UBKeyboardLocale* locale)
 {
-	SetMacLocaleByIdentifier(locale->id);
+    UBPlatformUtils::SetMacLocaleByIdentifier(locale->id);
 }
 

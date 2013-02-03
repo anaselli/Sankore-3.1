@@ -1,9 +1,25 @@
 /*
- * UBDesktopPalette.cpp
+ * Copyright (C) 2012 Webdoc SA
  *
- *  Created on: Jan 9, 2009
- *      Author: julienbachmann
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+
 #include "UBDesktopPalette.h"
 
 #include <QtGui>
@@ -21,14 +37,15 @@
 
 #include "core/memcheck.h"
 
-UBDesktopPalette::UBDesktopPalette(QWidget *parent)
+UBDesktopPalette::UBDesktopPalette(QWidget *parent, UBRightPalette* _rightPalette)
     : UBActionPalette(Qt::TopLeftCorner, parent)
-        , mShowHideAction(0)
-        , mDisplaySelectAction(0)
+    , mShowHideAction(NULL)
+    , mDisplaySelectAction(NULL)
+    , rightPalette(_rightPalette)
 {
     QList<QAction*> actions;
 
-    mActionUniboard = new QAction(QIcon(":/images/toolbar/board.png"), tr("Show Uniboard"), this);
+    mActionUniboard = new QAction(QIcon(":/images/toolbar/board.png"), tr("Show Open-Sankore"), this);
     connect(mActionUniboard, SIGNAL(triggered()), this, SIGNAL(uniboardClick()));
     actions << mActionUniboard;
 
@@ -72,6 +89,8 @@ UBDesktopPalette::UBDesktopPalette(QWidget *parent)
     connect(this, SIGNAL(maximizeStart()), this, SLOT(maximizeMe()));
     connect(this, SIGNAL(minimizeStart(eMinimizedLocation)), this, SLOT(minimizeMe(eMinimizedLocation)));
     setMinimizePermission(true);
+
+    connect(rightPalette, SIGNAL(resized()), this, SLOT(parentResized()));
 }
 
 
@@ -109,6 +128,9 @@ void UBDesktopPalette::updateShowHideState(bool pShowEnabled)
         mShowHideAction->setToolTip(tr("Show Board on Secondary Screen"));
     else
         mShowHideAction->setToolTip(tr("Show Desktop on Secondary Screen"));
+
+    if (pShowEnabled)
+        raise();
 }
 
 
@@ -216,4 +238,21 @@ QPoint UBDesktopPalette::buttonPos(QAction *action)
     }
 
     return p;
+}
+
+
+int UBDesktopPalette::getParentRightOffset()
+{
+    return rightPalette->width();
+}
+
+void UBDesktopPalette::parentResized()
+{
+    QPoint p = pos();
+    if (minimizedLocation() == eMinimizedLocation_Right)
+    {
+        p.setX(parentWidget()->width() - getParentRightOffset() -width());
+    }
+
+    moveInsideParent(p);
 }

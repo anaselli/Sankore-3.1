@@ -1,17 +1,24 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 #include <QtGui>
 #include <QtSvg>
@@ -54,10 +61,15 @@ DelegateButton::DelegateButton(const QString & fileName, QGraphicsItem* pDelegat
     : QGraphicsSvgItem(fileName, parent)
     , mDelegated(pDelegated)
     , mIsTransparentToMouseEvent(false)
+    , mIsPressed(false)
+    , mProgressTimerId(-1)
+    , mPressProgres(0)
+    , mShowProgressIndicator(false)
     , mButtonAlignmentSection(section)
 {
     setAcceptedMouseButtons(Qt::LeftButton);
     setData(UBGraphicsItemData::ItemLayerType, QVariant(UBItemLayerType::Control));
+    setCacheMode(QGraphicsItem::NoCache); /* because of SANKORE-1017: this allows pixmap to be refreshed when grabbing window, thus teacher screen is synchronized with main screen. */
 }
 
 DelegateButton::~DelegateButton()
@@ -70,17 +82,28 @@ void DelegateButton::setFileName(const QString & fileName)
     QGraphicsSvgItem::setSharedRenderer(new QSvgRenderer (fileName, this));
 }
 
-
 void DelegateButton::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
+    if (mShowProgressIndicator) {
+        QTimer::singleShot(300, this, SLOT(startShowProgress()));
+    }
+
+    mIsPressed = true;
+
     // make sure delegate is selected, to avoid control being hidden
     mPressedTime = QTime::currentTime();
 
     event->setAccepted(!mIsTransparentToMouseEvent);
- }
+}
 
 void DelegateButton::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
+    if (mShowProgressIndicator && mProgressTimerId != -1) {
+        killTimer(mProgressTimerId);
+        mPressProgres = 0;
+    }
+
+    mIsPressed = false;
     int timeto = qAbs(QTime::currentTime().msecsTo(mPressedTime));
 
     if (timeto < UBSettings::longClickInterval) {
@@ -90,9 +113,45 @@ void DelegateButton::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
     }
 
     event->setAccepted(!mIsTransparentToMouseEvent);
+
+    update();
 }
 
-UBGraphicsItemDelegate::UBGraphicsItemDelegate(QGraphicsItem* pDelegated, QObject * parent, bool respectRatio, bool canRotate, bool useToolBar)
+void DelegateButton::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
+    QGraphicsSvgItem::paint(painter, option, widget);
+
+    if (mIsPressed && mShowProgressIndicator) {
+        QPen pen;
+        pen.setBrush(Qt::white);
+        pen.setWidth(3);
+        painter->save();
+
+        painter->setPen(pen);
+
+        int spanAngle = qMin(mPressProgres, UBSettings::longClickInterval) * 360 / UBSettings::longClickInterval;
+        painter->drawArc(option->rect.adjusted(pen.width(), pen.width(), -pen.width(), -pen.width()), 16 * 90, -16 * spanAngle);
+
+        painter->restore();
+    }
+}
+
+void DelegateButton::timerEvent(QTimerEvent *event)
+{
+    if (event->timerId() == mProgressTimerId) {
+        mPressProgres = qAbs(QTime::currentTime().msecsTo(mPressedTime));
+        update();
+    }
+}
+
+void DelegateButton::startShowProgress()
+{
+    if (mIsPressed) {
+         mProgressTimerId = startTimer(37);
+    }
+}
+
+UBGraphicsItemDelegate::UBGraphicsItemDelegate(QGraphicsItem* pDelegated, QObject * parent, bool respectRatio, bool canRotate, bool useToolBar, bool showGoContentButton)
     : QObject(parent)
     , mDelegated(pDelegated)
     , mDeleteButton(NULL)
@@ -112,8 +171,8 @@ UBGraphicsItemDelegate::UBGraphicsItemDelegate(QGraphicsItem* pDelegated, QObjec
     , mMimeData(NULL)
     , mFlippable(false)
     , mToolBarUsed(useToolBar)
+    , mShowGoContentButton(showGoContentButton)
 {
-    // NOOP
     connect(UBApplication::boardController, SIGNAL(zoomChanged(qreal)), this, SLOT(onZoomChanged()));
 }
 
@@ -139,11 +198,13 @@ void UBGraphicsItemDelegate::init()
     mButtons << mMenuButton;
 
     mZOrderUpButton = new DelegateButton(":/images/z_layer_up.svg", mDelegated, mFrame, Qt::BottomLeftSection);
+    mZOrderUpButton->setShowProgressIndicator(true);
     connect(mZOrderUpButton, SIGNAL(clicked()), this, SLOT(increaseZLevelUp()));
     connect(mZOrderUpButton, SIGNAL(longClicked()), this, SLOT(increaseZlevelTop()));
     mButtons << mZOrderUpButton;
 
     mZOrderDownButton = new DelegateButton(":/images/z_layer_down.svg", mDelegated, mFrame, Qt::BottomLeftSection);
+    mZOrderDownButton->setShowProgressIndicator(true);
     connect(mZOrderDownButton, SIGNAL(clicked()), this, SLOT(increaseZLevelDown()));
     connect(mZOrderDownButton, SIGNAL(longClicked()), this, SLOT(increaseZlevelBottom()));
     mButtons << mZOrderDownButton;
@@ -167,7 +228,8 @@ void UBGraphicsItemDelegate::init()
 
 UBGraphicsItemDelegate::~UBGraphicsItemDelegate()
 {
-    qDeleteAll(mButtons);
+    if (UBApplication::boardController)
+        disconnect(UBApplication::boardController, SIGNAL(zoomChanged(qreal)), this, SLOT(onZoomChanged()));
     // do not release mMimeData.
     // the mMimeData is owned by QDrag since the setMimeData call as specified in the documentation
 }
@@ -388,13 +450,26 @@ void UBGraphicsItemDelegate::remove(bool canUndo)
     UBGraphicsScene* scene = dynamic_cast<UBGraphicsScene*>(mDelegated->scene());
     if (scene)
     {
-        foreach(DelegateButton* button, mButtons)
-            scene->removeItem(button);
+//        bool shownOnDisplay = mDelegated->data(UBGraphicsItemData::ItemLayerType).toInt() != UBItemLayerType::Control;
+//        showHide(shownOnDisplay);
+//        updateFrame();
+//        updateButtons();
 
+        if (mFrame && !mFrame->scene() && mDelegated->scene())
+        {
+            mDelegated->scene()->addItem(mFrame);
+        }
+        mFrame->setAntiScale(mAntiScaleRatio);
+        mFrame->positionHandles();
+        updateButtons(true);
+
+        foreach(DelegateButton* button, mButtons) {
+            scene->removeItem(button);
+        }
         scene->removeItem(mFrame);
 
-        /* this is performed because when removing delegated from scene while it contains flash content, segfault happens because of QGraphicsScene::removeItem() */ 
-        UBGraphicsWebView *mDelegated_casted = dynamic_cast<UBGraphicsWebView*>(mDelegated);
+        /* this is performed because when removing delegated from scene while it contains flash content, segfault happens because of QGraphicsScene::removeItem() */
+        UBGraphicsWidgetItem *mDelegated_casted = dynamic_cast<UBGraphicsWidgetItem*>(mDelegated);
         if (mDelegated_casted)
             mDelegated_casted->setHtml(QString());
 
@@ -483,10 +558,8 @@ void UBGraphicsItemDelegate::showHide(bool show)
 }
 
 
-void UBGraphicsItemDelegate::gotoContentSource(bool checked)
+void UBGraphicsItemDelegate::gotoContentSource()
 {
-    Q_UNUSED(checked)
-
     UBItem* item = dynamic_cast<UBItem*>(mDelegated);
 
     if(item && !item->sourceUrl().isEmpty())
@@ -558,12 +631,14 @@ void UBGraphicsItemDelegate::decorateMenu(QMenu* menu)
     showIcon.addPixmap(QPixmap(":/images/eyeClosed.svg"), QIcon::Normal, QIcon::Off);
     mShowOnDisplayAction->setIcon(showIcon);
 
-    mGotoContentSourceAction = menu->addAction(tr("Go to Content Source"), this, SLOT(gotoContentSource(bool)));
+    if (mShowGoContentButton)
+    {
+        mGotoContentSourceAction = menu->addAction(tr("Go to Content Source"), this, SLOT(gotoContentSource()));
 
-    QIcon sourceIcon;
-    sourceIcon.addPixmap(QPixmap(":/images/toolbar/internet.png"), QIcon::Normal, QIcon::On);
-    mGotoContentSourceAction->setIcon(sourceIcon);
-
+        QIcon sourceIcon;
+        sourceIcon.addPixmap(QPixmap(":/images/toolbar/internet.png"), QIcon::Normal, QIcon::On);
+        mGotoContentSourceAction->setIcon(sourceIcon);
+    }
 }
 
 void UBGraphicsItemDelegate::updateMenuActionState()

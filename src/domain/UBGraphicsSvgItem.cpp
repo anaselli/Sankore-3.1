@@ -1,17 +1,24 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 #include "UBGraphicsSvgItem.h"
 
@@ -53,10 +60,11 @@ void UBGraphicsSvgItem::init()
 {
     setData(UBGraphicsItemData::ItemLayerType, UBItemLayerType::Object);
 
-    mDelegate = new UBGraphicsItemDelegate(this, 0, true, true, false);
-    mDelegate->init();
-    mDelegate->setFlippable(true);
-    mDelegate->setRotatable(true);
+    setDelegate(new UBGraphicsItemDelegate(this, 0, true, true, false, true));
+    Delegate()->init();
+    Delegate()->setFlippable(true);
+    Delegate()->setRotatable(true);
+
 
     setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
 
@@ -71,8 +79,6 @@ void UBGraphicsSvgItem::init()
 
 UBGraphicsSvgItem::~UBGraphicsSvgItem()
 {
-    if (mDelegate)
-        delete mDelegate;
 }
 
 
@@ -84,14 +90,14 @@ QByteArray UBGraphicsSvgItem::fileData() const
 
 QVariant UBGraphicsSvgItem::itemChange(GraphicsItemChange change, const QVariant &value)
 {
-    QVariant newValue = mDelegate->itemChange(change, value);
+    QVariant newValue = Delegate()->itemChange(change, value);
     return QGraphicsSvgItem::itemChange(change, newValue);
 }
 
 
 void UBGraphicsSvgItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-    if (mDelegate->mousePressEvent(event))
+    if (Delegate()->mousePressEvent(event))
     {
         //NOOP
     }
@@ -104,7 +110,7 @@ void UBGraphicsSvgItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
 void UBGraphicsSvgItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-    if (mDelegate->mouseMoveEvent(event))
+    if (Delegate()->mouseMoveEvent(event))
     {
         // NOOP;
     }
@@ -117,7 +123,7 @@ void UBGraphicsSvgItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 
 void UBGraphicsSvgItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
-    mDelegate->mouseReleaseEvent(event);
+    Delegate()->mouseReleaseEvent(event);
     QGraphicsSvgItem::mouseReleaseEvent(event);
 }
 
@@ -181,12 +187,6 @@ UBGraphicsScene* UBGraphicsSvgItem::scene()
     return qobject_cast<UBGraphicsScene*>(QGraphicsItem::scene());
 }
 
-
-void UBGraphicsSvgItem::remove()
-{
-    if (mDelegate)
-        mDelegate->remove(true);
-}
 
 
 UBGraphicsPixmapItem* UBGraphicsSvgItem::toPixmapItem() const

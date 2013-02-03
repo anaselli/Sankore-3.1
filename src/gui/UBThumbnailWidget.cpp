@@ -1,22 +1,29 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <QString>
 #include <QCursor>
 
 #include "UBThumbnailWidget.h"
 #include "UBRubberBand.h"
+#include "UBMainWindow.h"
 
 #include "board/UBBoardController.h"
 
@@ -858,7 +865,9 @@ void UBSceneThumbnailNavigPixmap::updateButtonsState()
 
 void UBSceneThumbnailNavigPixmap::deletePage()
 {
-	UBApplication::boardController->deleteScene(sceneIndex());
+	if(UBApplication::mainWindow->yesNoQuestion(QObject::tr("Remove Page"), QObject::tr("Are you sure you want to remove 1 page from the selected document '%0'?").arg(UBApplication::documentController->selectedDocument()->metaData(UBSettings::documentName).toString()))){
+		UBApplication::boardController->deleteScene(sceneIndex());
+	}
 }
 
 void UBSceneThumbnailNavigPixmap::duplicatePage()

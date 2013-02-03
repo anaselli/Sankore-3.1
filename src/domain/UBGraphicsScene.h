@@ -1,17 +1,24 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 #ifndef UBGRAPHICSSCENE_H_
 #define UBGRAPHICSSCENE_H_
@@ -101,11 +108,19 @@ class UBGraphicsScene: public UBCoreGraphicsScene, public UBItem
 
     public:
 
-    //        tmp stub for divide addings scene objects from undo mechanism implementation
-    void setURStackEnable(bool set = true) {enableUndoRedoStack = set;}
-    bool isURStackIsEnabled(){ return enableUndoRedoStack;}
+    enum clearCase {
+        clearItemsAndAnnotations = 0
+        , clearAnnotations
+        , clearItems
+        , clearBackground
+    };
 
-    UBGraphicsScene(UBDocumentProxy *parent);
+    //        tmp stub for divide addings scene objects from undo mechanism implementation
+        void enableUndoRedoStack(){mUndoRedoStackEnabled = true;}
+        void setURStackEnable(bool enable){mUndoRedoStackEnabled = enable;}
+        bool isURStackIsEnabled(){return mUndoRedoStackEnabled;}
+
+        UBGraphicsScene(UBDocumentProxy *parent, bool enableUndoRedoStack = true);
         virtual ~UBGraphicsScene();
 
         virtual UBItem* deepCopy() const;
@@ -114,10 +129,7 @@ class UBGraphicsScene: public UBCoreGraphicsScene, public UBItem
 
         UBGraphicsScene* sceneDeepCopy() const;
 
-        void clearItemsAndAnnotations();
-        void clearItems();
-        void clearAnnotations();
-        void clearBackground();
+        void clearContent(clearCase pCase = clearItemsAndAnnotations);
 
         bool inputDevicePress(const QPointF& scenePos, const qreal& pressure = 1.0);
         bool inputDeviceMove(const QPointF& scenePos, const qreal& pressure = 1.0);
@@ -170,7 +182,7 @@ class UBGraphicsScene: public UBCoreGraphicsScene, public UBItem
 
         QRectF normalizedSceneRect(qreal ratio = -1.0);
 
-        QGraphicsItem *itemByUuid(QUuid uuid);
+        QGraphicsItem *itemForUuid(QUuid uuid);
 
         void moveTo(const QPointF& pPoint);
         void drawLineTo(const QPointF& pEndPoint, const qreal& pWidth, bool bLineStyle);
@@ -178,16 +190,6 @@ class UBGraphicsScene: public UBCoreGraphicsScene, public UBItem
         void drawArcTo(const QPointF& pCenterPoint, qreal pSpanAngle);
 
         bool isEmpty() const;
-
-        bool isModified() const
-        {
-            return mIsModified;
-        }
-
-        void setModified(bool pModified)
-        {
-            mIsModified = pModified;
-        }
 
         void setDocument(UBDocumentProxy* pDocument);
 
@@ -221,6 +223,7 @@ class UBGraphicsScene: public UBCoreGraphicsScene, public UBItem
         void addCompass(QPointF center);
         void addTriangle(QPointF center);
         void addMagnifier(UBMagnifierParams params);
+        void addAristo(QPointF center);
 
         void addMask(const QPointF &center = QPointF());
         void addCache();
@@ -306,6 +309,8 @@ class UBGraphicsScene: public UBCoreGraphicsScene, public UBItem
 
         static QUuid getPersonalUuid(QGraphicsItem *item);
 
+        UBGraphicsPolygonItem* polygonToPolygonItem(const QPolygonF pPolygon);
+
 public slots:
 		void initStroke();
         void hideEraser();
@@ -342,7 +347,6 @@ public slots:
 
         UBGraphicsPolygonItem* lineToPolygonItem(const QLineF& pLine, const qreal& pWidth);
         UBGraphicsPolygonItem* arcToPolygonItem(const QLineF& pStartRadius, qreal pSpanAngle, qreal pWidth);
-        UBGraphicsPolygonItem* polygonToPolygonItem(const QPolygonF pPolygon);
 
         void initPolygonItem(UBGraphicsPolygonItem*);
 
@@ -380,8 +384,6 @@ public slots:
         bool mIsDesktopMode;
         qreal mZoomFactor;
 
-        bool mIsModified;
-
         QGraphicsItem* mBackgroundObject;
 
         QPointF mPreviousPoint;
@@ -413,7 +415,7 @@ public slots:
 
         bool mHasCache;
         //        tmp stub for divide addings scene objects from undo mechanism implementation
-        bool enableUndoRedoStack;
+        bool mUndoRedoStackEnabled;
 
         UBMagnifier *magniferControlViewWidget;
         UBMagnifier *magniferDisplayViewWidget;

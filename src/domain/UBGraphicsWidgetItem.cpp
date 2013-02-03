@@ -1,17 +1,24 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 #include <QtNetwork>
 #include <QtXml>
@@ -45,20 +52,20 @@ bool UBGraphicsWidgetItem::sInlineJavaScriptLoaded = false;
 QStringList UBGraphicsWidgetItem::sInlineJavaScripts;
 
 UBGraphicsWidgetItem::UBGraphicsWidgetItem(const QUrl &pWidgetUrl, QGraphicsItem *parent)
-    : UBGraphicsWebView(parent)
+    : QGraphicsWebView(parent)
     , mInitialLoadDone(false)
     , mIsFreezable(true)
-    , mIsResizable(false)    
-    , mLoadIsErronous(false)    
+    , mIsResizable(false)
+    , mLoadIsErronous(false)
     , mCanBeContent(0)
     , mCanBeTool(0)
     , mWidgetUrl(pWidgetUrl)
     , mIsFrozen(false)
     , mIsTakingSnapshot(false)
     , mShouldMoveWidget(false)
-    , mUniboardAPI(0)    
+    , mUniboardAPI(0)
 {
-    setData(UBGraphicsItemData::itemLayerType, QVariant(itemLayerType::ObjectItem)); //Necessary to set if we want z value to be assigned correctly
+    setData(UBGraphicsItemData::ItemLayerType, QVariant(itemLayerType::ObjectItem)); //Necessary to set if we want z value to be assigned correctly
 
     QGraphicsWebView::setPage(new UBWebPage(this));
     QGraphicsWebView::settings()->setAttribute(QWebSettings::JavaEnabled, true);
@@ -84,9 +91,11 @@ UBGraphicsWidgetItem::UBGraphicsWidgetItem(const QUrl &pWidgetUrl, QGraphicsItem
     viewPalette.setBrush(QPalette::Window, QBrush(Qt::transparent));
     setPalette(viewPalette);
 
-    UBGraphicsWidgetItemDelegate* delegate = new UBGraphicsWidgetItemDelegate(this);
-    delegate->init();
-    setDelegate(delegate);
+    setDelegate(new UBGraphicsWidgetItemDelegate(this));
+    Delegate()->init();
+
+    setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
+    QGraphicsWebView::setAcceptHoverEvents(true);
 }
 
 
@@ -97,11 +106,11 @@ UBGraphicsWidgetItem::~UBGraphicsWidgetItem()
 
 void UBGraphicsWidgetItem::initialize()
 {
-    UBGraphicsWebView::setMinimumSize(nominalSize());
+    setMinimumSize(nominalSize());
     setData(UBGraphicsItemData::itemLayerType, QVariant(itemLayerType::ObjectItem)); // Necessary to set if we want z value to be assigned correctly
 
-    if (mDelegate && mDelegate->frame() && resizable())
-        mDelegate->frame()->setOperationMode(UBGraphicsDelegateFrame::Resizing);
+    if (Delegate() && Delegate()->frame() && resizable())
+        Delegate()->frame()->setOperationMode(UBGraphicsDelegateFrame::Resizing);
 
     QPalette palette = page()->palette();
     palette.setBrush(QPalette::Base, QBrush(Qt::transparent));
@@ -111,12 +120,18 @@ void UBGraphicsWidgetItem::initialize()
     connect(page()->mainFrame(), SIGNAL(javaScriptWindowObjectCleared()), this, SLOT(javaScriptWindowObjectCleared()));
     connect(page(), SIGNAL(geometryChangeRequested(const QRect&)), this, SLOT(geometryChangeRequested(const QRect&)));
     connect(this, SIGNAL(loadFinished(bool)), this, SLOT(mainFrameLoadFinished (bool)));
+    connect(page()->mainFrame(), SIGNAL(initialLayoutCompleted()), this, SLOT(initialLayoutCompleted()));
     connect(page(), SIGNAL(linkClicked(const QUrl&)), this, SLOT(onLinkClicked(const QUrl&)));
 }
 
 void UBGraphicsWidgetItem::onLinkClicked(const QUrl& url)
 {
-	UBApplication::webController->loadUrl(url);
+    load(url);
+}
+
+void UBGraphicsWidgetItem::initialLayoutCompleted()
+{
+    mInitialLoadDone = true;
 }
 
 QUrl UBGraphicsWidgetItem::mainHtml()
@@ -137,24 +152,6 @@ QUrl UBGraphicsWidgetItem::widgetUrl()
 QString UBGraphicsWidgetItem::mainHtmlFileName()
 {
     return mMainHtmlFileName;
-}
-
-bool UBGraphicsWidgetItem::hasEmbededObjects()
-{
-    if (page()->mainFrame()) {
-        QList<UBWebKitUtils::HtmlObject> htmlObjects = UBWebKitUtils::objectsInFrame(page()->mainFrame());
-        return htmlObjects.length() > 0;
-    }
-
-    return false;
-}
-
-bool UBGraphicsWidgetItem::hasEmbededFlash()
-{
-    if (hasEmbededObjects())
-        return page()->mainFrame()->toHtml().contains("application/x-shockwave-flash");
-    else
-        return false;
 }
 
 bool UBGraphicsWidgetItem::canBeContent()
@@ -260,17 +257,6 @@ void UBGraphicsWidgetItem::removeAllDatastoreEntries()
     mDatastore.clear();
 }
 
-UBGraphicsItemDelegate* UBGraphicsWidgetItem::Delegate() const 
-{
-    return mDelegate;
-}
-
-void UBGraphicsWidgetItem::remove()
-{
-    if (mDelegate)
-        mDelegate->remove();
-}
-
 void UBGraphicsWidgetItem::removeScript()
 {
     if (page() && page()->mainFrame())
@@ -327,18 +313,18 @@ bool UBGraphicsWidgetItem::hasLoadedSuccessfully() const
     return (mInitialLoadDone && !mLoadIsErronous);
 }
 
-bool UBGraphicsWidgetItem::freezable() 
-{ 
+bool UBGraphicsWidgetItem::freezable()
+{
     return mIsFreezable;
 }
 
 bool UBGraphicsWidgetItem::resizable()
-{ 
+{
     return mIsResizable;
-}        
+}
 
 bool UBGraphicsWidgetItem::isFrozen()
-{ 
+{
     return mIsFrozen;
 }
 
@@ -354,11 +340,13 @@ QPixmap UBGraphicsWidgetItem::takeSnapshot()
     QPixmap pixmap(size().toSize());
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
- 
+
     QStyleOptionGraphicsItem options;
     paint(&painter, &options);
 
     mIsTakingSnapshot = false;
+
+    mSnapshot = pixmap;
 
     return pixmap;
 }
@@ -498,11 +486,11 @@ bool UBGraphicsWidgetItem::event(QEvent *event)
             event->accept();
             return true;
         }
-    }    
+    }
     else if (event->type() == QEvent::ShortcutOverride)
         event->accept();
 
-    return UBGraphicsWebView::event(event);
+    return QGraphicsWebView::event(event);
 }
 
 void UBGraphicsWidgetItem::dropEvent(QGraphicsSceneDragDropEvent *event)
@@ -513,7 +501,10 @@ void UBGraphicsWidgetItem::dropEvent(QGraphicsSceneDragDropEvent *event)
 
 void UBGraphicsWidgetItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-    UBGraphicsWebView::mousePressEvent(event);
+    if (!Delegate()->mousePressEvent(event))
+        setSelected(true); /* forcing selection */
+
+    QGraphicsWebView::mousePressEvent(event);
 
     // did webkit consume the mouse press ?
     mShouldMoveWidget = !event->isAccepted() && (event->buttons() & Qt::LeftButton);
@@ -527,24 +518,19 @@ void UBGraphicsWidgetItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
     mShouldMoveWidget = false;
 
-    UBGraphicsWebView::mouseReleaseEvent(event);
+    Delegate()->mouseReleaseEvent(event);
+    QGraphicsWebView::mouseReleaseEvent(event);
 }
 
 void UBGraphicsWidgetItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
 {
     sendJSEnterEvent();
-    mDelegate->hoverEnterEvent(event);
-    UBGraphicsWebView::hoverEnterEvent(event);
+    Delegate()->hoverEnterEvent(event);
 }
 void UBGraphicsWidgetItem::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
 {
     sendJSLeaveEvent();
-    mDelegate->hoverLeaveEvent(event);
-    UBGraphicsWebView::hoverLeaveEvent(event);
-}
-void UBGraphicsWidgetItem::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
-{
-    UBGraphicsWebView::hoverMoveEvent(event);
+    Delegate()->hoverLeaveEvent(event);
 }
 
 void UBGraphicsWidgetItem::sendJSEnterEvent()
@@ -572,17 +558,18 @@ void UBGraphicsWidgetItem::injectInlineJavaScript()
 
 void UBGraphicsWidgetItem::paint( QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    if (mIsFrozen)
-        painter->drawPixmap(0, 0, mSnapshot);
-    else
-        UBGraphicsWebView::paint(painter, option, widget);
-    if (!mInitialLoadDone || mLoadIsErronous) {
+
+    if (scene() && scene()->renderingContext() != UBGraphicsScene::Screen) {
+        painter->drawPixmap(0, 0, snapshot());
+    }
+    else {
+        QGraphicsWebView::paint(painter, option, widget);
+    }
+
+    if (!mInitialLoadDone) {
         QString message;
 
-        if (mInitialLoadDone && mLoadIsErronous)
-            message = tr("Cannot load content");
-        else
-            message = tr("Loading ...");
+        message = tr("Loading ...");
 
         painter->setFont(QFont("Arial", 12));
 
@@ -619,9 +606,55 @@ void UBGraphicsWidgetItem::javaScriptWindowObjectCleared()
 
 void UBGraphicsWidgetItem::mainFrameLoadFinished (bool ok)
 {
-    mInitialLoadDone = true;
     mLoadIsErronous = !ok;
     update(boundingRect());
+    takeSnapshot();
+}
+
+void UBGraphicsWidgetItem::wheelEvent(QGraphicsSceneWheelEvent *event)
+{
+    if (Delegate()->weelEvent(event))
+    {
+        QGraphicsWebView::wheelEvent(event);
+        event->accept();
+    }
+}
+
+QVariant UBGraphicsWidgetItem::itemChange(GraphicsItemChange change, const QVariant &value)
+{
+    if ((change == QGraphicsItem::ItemSelectedHasChanged) &&  scene()) {
+        if (isSelected())
+            scene()->setActiveWindow(this);
+        else
+            if(scene()->activeWindow() == this)
+                scene()->setActiveWindow(0);
+    }
+
+    QVariant newValue = Delegate()->itemChange(change, value);
+    return QGraphicsWebView::itemChange(change, newValue);
+}
+
+void UBGraphicsWidgetItem::resize(qreal w, qreal h)
+{
+    UBGraphicsWidgetItem::resize(QSizeF(w, h));
+}
+
+
+void UBGraphicsWidgetItem::resize(const QSizeF & pSize)
+{
+    if (pSize != size()) {
+        QGraphicsWebView::setMaximumSize(pSize.width(), pSize.height());
+        QGraphicsWebView::resize(pSize.width(), pSize.height());
+        if (Delegate())
+            Delegate()->positionHandles();
+        if (scene())
+            scene()->setModified(true);
+    }
+}
+
+QSizeF UBGraphicsWidgetItem::size() const
+{
+    return QGraphicsWebView::size();
 }
 
 
@@ -769,7 +802,7 @@ UBGraphicsW3CWidgetItem::UBGraphicsW3CWidgetItem(const QUrl& pWidgetUrl, QGraphi
 
         if (roles.contains("tmac"))
             mCanBeTool |= UBGraphicsWidgetItem::type_MAC;
-        
+
         if (roles.contains("tunix"))
             mCanBeTool |= UBGraphicsWidgetItem::type_UNIX;
 
@@ -842,9 +875,6 @@ UBGraphicsW3CWidgetItem::UBGraphicsW3CWidgetItem(const QUrl& pWidgetUrl, QGraphi
     /* is it a valid local file ? */
     QFile f(mMainHtmlUrl.toLocalFile());
 
-    qDebug() << mMainHtmlFileName;
-    qDebug() << mMainHtmlUrl.toLocalFile();
-
     if(!f.exists())
         mMainHtmlUrl = QUrl(mMainHtmlFileName);
 
@@ -879,21 +909,6 @@ UBItem* UBGraphicsW3CWidgetItem::deepCopy() const
     copyItemParameters(copy);
 
     return copy;
-}
-
-void UBGraphicsW3CWidgetItem::paint(QPainter * painter, const QStyleOptionGraphicsItem * option, QWidget * widget)
-{
-    UBGraphicsScene::RenderingContext rc = UBGraphicsScene::Screen;
-
-    if (scene())
-      rc =  scene()->renderingContext();
-
-    if (rc == UBGraphicsScene::NonScreen || rc == UBGraphicsScene::PdfExport) {
-        if (!snapshot().isNull())
-           painter->drawPixmap(0, 0, snapshot());
-    }
-    else
-        UBGraphicsWidgetItem::paint(painter, option, widget);
 }
 
 QMap<QString, UBGraphicsW3CWidgetItem::PreferenceValue> UBGraphicsW3CWidgetItem::preferences()
@@ -1079,11 +1094,11 @@ QString UBGraphicsW3CWidgetItem::freezedWidgetPage()
         if (!wrapperFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
             qDebug() << "can't open wrapper file " + freezedWidgetDefaultContentFilePath;
             defaultcontent = "";
-        } 
+        }
         else {
             QByteArray arr = wrapperFile.readAll();
             if (!arr.isEmpty())
-                defaultcontent = QString(arr); 
+                defaultcontent = QString(arr);
             else {
                 qDebug() << "content of " + freezedWidgetDefaultContentFilePath + "is empty";
                 defaultcontent = QString();

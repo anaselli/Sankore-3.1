@@ -1,3 +1,25 @@
+/*
+ * Copyright (C) 2012 Webdoc SA
+ *
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
 #include "UBGraphicsGroupContainerItem.h"
 
 #include <QtGui>
@@ -16,8 +38,8 @@ UBGraphicsGroupContainerItem::UBGraphicsGroupContainerItem(QGraphicsItem *parent
 {
     setData(UBGraphicsItemData::ItemLayerType, UBItemLayerType::Object);
 
-    mDelegate = new UBGraphicsGroupContainerItemDelegate(this, 0);
-    mDelegate->init();
+   	setDelegate(new UBGraphicsGroupContainerItemDelegate(this, 0));
+    Delegate()->init();
 
     setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
     setFlag(QGraphicsItem::ItemIsSelectable, true);
@@ -28,18 +50,10 @@ UBGraphicsGroupContainerItem::UBGraphicsGroupContainerItem(QGraphicsItem *parent
     setUuid(QUuid::createUuid());
 
     setData(UBGraphicsItemData::itemLayerType, QVariant(itemLayerType::ObjectItem)); //Necessary to set if we want z value to be assigned correctly
-
-
 }
 
 UBGraphicsGroupContainerItem::~UBGraphicsGroupContainerItem()
 {
-    foreach (QGraphicsItem *item, childItems())
-    {   
-        removeFromGroup(item);
-        if (item && item->scene())
-            item->scene()->removeItem(item);
-    }
 }
 
 void UBGraphicsGroupContainerItem::addToGroup(QGraphicsItem *item)
@@ -56,14 +70,14 @@ void UBGraphicsGroupContainerItem::addToGroup(QGraphicsItem *item)
     //Check if group is allready rotatable or flippable
     if (childItems().count()) {
         if (UBGraphicsItem::isFlippable(this) && !UBGraphicsItem::isFlippable(item)) {
-            mDelegate->setFlippable(false);
+            Delegate()->setFlippable(false);
         }
         if (UBGraphicsItem::isRotatable(this) && !UBGraphicsItem::isRotatable(item)) {
-            mDelegate->setRotatable(false);
+            Delegate()->setRotatable(false);
         }
     } else {
-        mDelegate->setFlippable(UBGraphicsItem::isFlippable(item));
-        mDelegate->setRotatable(UBGraphicsItem::isRotatable(item));
+        Delegate()->setFlippable(UBGraphicsItem::isFlippable(item));
+        Delegate()->setRotatable(UBGraphicsItem::isRotatable(item));
     }
 
     // COMBINE
@@ -83,6 +97,13 @@ void UBGraphicsGroupContainerItem::addToGroup(QGraphicsItem *item)
 
     QTransform newItemTransform(itemTransform);
     item->setPos(mapFromItem(item, 0, 0));
+
+    if (item->scene()) {
+        item->scene()->removeItem(item);
+    }
+
+    if (corescene())
+        corescene()->removeItemFromDeletion(item);
     item->setParentItem(this);
 
     // removing position from translation component of the new transform
@@ -113,14 +134,18 @@ void UBGraphicsGroupContainerItem::removeFromGroup(QGraphicsItem *item)
 {
     if (!item) {
         qDebug() << "can't specify the item because of the null pointer";
+        return;
     }
 
-    UBGraphicsScene *groupScene = scene();
-    if (groupScene) {
+    UBCoreGraphicsScene *groupScene = corescene();
+    if (groupScene)
+    {    
         groupScene->addItemToDeletion(item);
     }
 
     pRemoveFromGroup(item);
+
+    item->setFlags(ItemIsSelectable | ItemIsFocusable);
 
 }
 
@@ -170,9 +195,9 @@ void UBGraphicsGroupContainerItem::paint(QPainter *painter, const QStyleOptionGr
 //    }
 }
 
-UBGraphicsScene *UBGraphicsGroupContainerItem::scene()
+UBCoreGraphicsScene *UBGraphicsGroupContainerItem::corescene()
 {
-    UBGraphicsScene *castScene = dynamic_cast<UBGraphicsScene*>(QGraphicsItem::scene());
+    UBCoreGraphicsScene *castScene = dynamic_cast<UBCoreGraphicsScene*>(QGraphicsItem::scene());
 
     return castScene;
 }
@@ -204,40 +229,38 @@ void UBGraphicsGroupContainerItem::copyItemParameters(UBItem *copy) const
     }
 }
 
-void UBGraphicsGroupContainerItem::remove()
-{
-    if (mDelegate)
-        mDelegate->remove();
-}
-
 void UBGraphicsGroupContainerItem::setUuid(const QUuid &pUuid)
 {
     UBItem::setUuid(pUuid);
     setData(UBGraphicsItemData::ItemUuid, QVariant(pUuid)); //store item uuid inside the QGraphicsItem to fast operations with Items on the scene
 }
 
-void UBGraphicsGroupContainerItem::destroy() {
-
-    UBGraphicsScene *groupScene = scene();
-
+void UBGraphicsGroupContainerItem::destroy(bool canUndo) {
 
     foreach (QGraphicsItem *item, childItems()) {
-
-        if (groupScene) {
-            groupScene->addItemToDeletion(item);
-        }
-
         pRemoveFromGroup(item);
         item->setFlag(QGraphicsItem::ItemIsSelectable, true);
         item->setFlag(QGraphicsItem::ItemIsFocusable, true);
     }
 
-    remove();
+    remove(canUndo);
+}
+
+void UBGraphicsGroupContainerItem::clearSource()
+{
+    foreach(QGraphicsItem *child, childItems())
+    {
+        UBGraphicsItem *item = dynamic_cast<UBGraphicsItem *>(child);
+        if (item)
+        {
+            item->clearSource();
+        }
+    }
 }
 
 void UBGraphicsGroupContainerItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-    if (mDelegate->mousePressEvent(event)) {
+    if (Delegate()->mousePressEvent(event)) {
         //NOOP
     } else {
 
@@ -250,7 +273,7 @@ void UBGraphicsGroupContainerItem::mousePressEvent(QGraphicsSceneMouseEvent *eve
 
 void UBGraphicsGroupContainerItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-    if (mDelegate->mouseMoveEvent(event)) {
+    if (Delegate()->mouseMoveEvent(event)) {
         // NOOP;
     } else {
         QGraphicsItem::mouseMoveEvent(event);
@@ -266,7 +289,7 @@ void UBGraphicsGroupContainerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *e
 
 QVariant UBGraphicsGroupContainerItem::itemChange(GraphicsItemChange change, const QVariant &value)
 {
-    QVariant newValue = mDelegate->itemChange(change, value);
+    QVariant newValue = Delegate()->itemChange(change, value);
 
     foreach(QGraphicsItem *child, children())
     {
@@ -310,8 +333,8 @@ void UBGraphicsGroupContainerItem::pRemoveFromGroup(QGraphicsItem *item)
                     break;
                 }
             }
-            mDelegate->setFlippable(flippableNow);
-            mDelegate->setRotatable(rotatableNow);
+            Delegate()->setFlippable(flippableNow);
+            Delegate()->setRotatable(rotatableNow);
         }
     }
 
@@ -326,6 +349,12 @@ void UBGraphicsGroupContainerItem::pRemoveFromGroup(QGraphicsItem *item)
     QPointF oldPos = item->mapToItem(newParent, 0, 0);
     item->setParentItem(newParent);
     item->setPos(oldPos);
+
+    UBGraphicsScene *Scene = dynamic_cast<UBGraphicsScene *>(item->scene());
+    if (Scene)
+    {    
+        Scene->addItem(item);
+    }
 
     // removing position from translation component of the new transform
     if (!item->pos().isNull())

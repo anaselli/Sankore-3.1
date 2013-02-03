@@ -1,17 +1,24 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 #ifndef UBBOARDVIEW_H_
 #define UBBOARDVIEW_H_
@@ -31,8 +38,8 @@ class UBBoardView : public QGraphicsView
 
     public:
 
-        UBBoardView(UBBoardController* pController, QWidget* pParent = 0, bool pIsControl = false);
-        UBBoardView(UBBoardController* pController, int pStartLayer, int pEndLayer, QWidget* pParent = 0, bool pIscontrol = false);
+        UBBoardView(UBBoardController* pController, QWidget* pParent = 0, bool isControl = false, bool isDesktop = false);
+        UBBoardView(UBBoardController* pController, int pStartLayer, int pEndLayer, QWidget* pParent = 0, bool isControl = false, bool isDesktop = false);
         virtual ~UBBoardView();
 
         UBGraphicsScene* scene();
@@ -57,6 +64,8 @@ class UBBoardView : public QGraphicsView
     protected:
 
         bool itemIsLocked(QGraphicsItem *item);
+        bool isUBItem(QGraphicsItem *item); // we should to determine items who is not UB and use general scene behavior for them.
+        bool isCppTool(QGraphicsItem *item);
         void handleItemsSelection(QGraphicsItem *item);
         bool itemShouldReceiveMousePressEvent(QGraphicsItem *item);
         bool itemShouldReceiveSuspendedMousePressEvent(QGraphicsItem *item);
@@ -152,7 +161,9 @@ class UBBoardView : public QGraphicsView
 
         bool mIsDragInProgress;
         bool mMultipleSelectionIsEnabled;
-        bool isControl;
+        bool bIsControl;
+        bool bIsDesktop;
+        bool mRubberBandInPlayMode;
 
         static bool hasSelectedParents(QGraphicsItem * item);
 

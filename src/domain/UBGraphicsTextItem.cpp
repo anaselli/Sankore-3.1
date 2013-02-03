@@ -1,17 +1,24 @@
 /*
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2012 Webdoc SA
  *
- * This program is distributed in the hope that it will be useful,
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 #include <QtGui>
 #include "UBGraphicsGroupContainerItem.h"
@@ -30,17 +37,18 @@
 
 QColor UBGraphicsTextItem::lastUsedTextColor;
 
-UBGraphicsTextItem::UBGraphicsTextItem(QGraphicsItem * parent)
-    : QGraphicsTextItem(parent)
+UBGraphicsTextItem::UBGraphicsTextItem(QGraphicsItem * parent) :
+    QGraphicsTextItem(parent)
+    , UBGraphicsItem()
     , mMultiClickState(0)
     , mLastMousePressTime(QTime::currentTime())
 {
-    mDelegate = new UBGraphicsTextItemDelegate(this, 0);
-    mDelegate->init();
+    setDelegate(new UBGraphicsTextItemDelegate(this, 0));
+    Delegate()->init();
 
-    mDelegate->frame()->setOperationMode(UBGraphicsDelegateFrame::Resizing);
-    mDelegate->setFlippable(false);
-    mDelegate->setRotatable(true);
+    Delegate()->frame()->setOperationMode(UBGraphicsDelegateFrame::Resizing);
+    Delegate()->setFlippable(false);
+    Delegate()->setRotatable(true);
 
     mTypeTextHereLabel = tr("<Type Text Here>");
 
@@ -58,7 +66,7 @@ UBGraphicsTextItem::UBGraphicsTextItem(QGraphicsItem * parent)
 
     setUuid(QUuid::createUuid());
 
-    connect(document(), SIGNAL(contentsChanged()), mDelegate, SLOT(contentsChanged()));
+    connect(document(), SIGNAL(contentsChanged()), Delegate(), SLOT(contentsChanged()));
     connect(document(), SIGNAL(undoCommandAdded()), this, SLOT(undoCommandAdded()));
 
     connect(document()->documentLayout(), SIGNAL(documentSizeChanged(const QSizeF &)),
@@ -68,18 +76,14 @@ UBGraphicsTextItem::UBGraphicsTextItem(QGraphicsItem * parent)
 
 UBGraphicsTextItem::~UBGraphicsTextItem()
 {
-    if (mDelegate)
-    {
-        delete mDelegate;
-    }
 }
 
 QVariant UBGraphicsTextItem::itemChange(GraphicsItemChange change, const QVariant &value)
 {
     QVariant newValue = value;
 
-    if(mDelegate)
-        newValue = mDelegate->itemChange(change, value);
+    if(Delegate())
+        newValue = Delegate()->itemChange(change, value);
 
     return QGraphicsTextItem::itemChange(change, newValue);
 }
@@ -95,10 +99,10 @@ void UBGraphicsTextItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
         return;
     }
 
-    if (mDelegate)
+    if (Delegate())
     {
-        mDelegate->mousePressEvent(event);
-        if (mDelegate && parentItem() && UBGraphicsGroupContainerItem::Type == parentItem()->type())
+        Delegate()->mousePressEvent(event);
+        if (Delegate() && parentItem() && UBGraphicsGroupContainerItem::Type == parentItem()->type())
         {
             UBGraphicsGroupContainerItem *group = qgraphicsitem_cast<UBGraphicsGroupContainerItem*>(parentItem());
             if (group)
@@ -110,13 +114,13 @@ void UBGraphicsTextItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
                 }   
                 group->setCurrentItem(this);
                 this->setSelected(true);
-                mDelegate->positionHandles();
+                Delegate()->positionHandles();
             }       
 
         }
         else
         {
-            mDelegate->getToolBarItem()->show();
+            Delegate()->getToolBarItem()->show();
         }
 
     }
@@ -165,7 +169,7 @@ void UBGraphicsTextItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
 void UBGraphicsTextItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-    if (!mDelegate || !mDelegate->mouseMoveEvent(event))
+    if (!Delegate() || !Delegate()->mouseMoveEvent(event))
     {
         QGraphicsTextItem::mouseMoveEvent(event);
     }
@@ -184,8 +188,8 @@ void UBGraphicsTextItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 
     if (mMultiClickState == 1)
     {
-        if (mDelegate)
-            mDelegate->mouseReleaseEvent(event);
+        if (Delegate())
+            Delegate()->mouseReleaseEvent(event);
 
         QGraphicsTextItem::mouseReleaseEvent(event);
     }
@@ -324,8 +328,8 @@ void UBGraphicsTextItem::resize(qreal w, qreal h)
     setTextWidth(w);
     setTextHeight(h);
 
-    if (mDelegate)
-        mDelegate->positionHandles();
+    if (Delegate())
+        Delegate()->positionHandles();
 }
 
 
@@ -346,12 +350,6 @@ void UBGraphicsTextItem::undoCommandAdded()
     emit textUndoCommandAdded(this);
 }
 
-
-void UBGraphicsTextItem::remove()
-{
-    if (mDelegate)
-        mDelegate->remove(true);
-}
 
 void UBGraphicsTextItem::documentSizeChanged(const QSizeF & newSize)
 {

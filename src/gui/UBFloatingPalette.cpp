@@ -1,3 +1,24 @@
+/*
+ * Copyright (C) 2012 Webdoc SA
+ *
+ * This file is part of Open-Sankoré.
+ *
+ * Open-Sankoré is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License,
+ * with a specific linking exception for the OpenSSL project's
+ * "OpenSSL" library (or with modified versions of it that use the
+ * same license as the "OpenSSL" library).
+ *
+ * Open-Sankoré is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 
 #include <QtGui>
 #include <QPainterPath>
@@ -129,6 +150,11 @@ void UBFloatingPalette::mouseReleaseEvent(QMouseEvent *event)
     }
 }
 
+int UBFloatingPalette::getParentRightOffset()
+{
+    return 0;
+}
+
 void UBFloatingPalette::moveInsideParent(const QPoint &position)
 {
     QWidget *parent = parentWidget();
@@ -136,7 +162,7 @@ void UBFloatingPalette::moveInsideParent(const QPoint &position)
     if (parent)
     {
         int margin = UBSettings::boardMargin - border();
-        qreal newX = qMax(margin, qMin(parent->width() - width() - margin, position.x()));
+        qreal newX = qMax(margin, qMin(parent->width() - getParentRightOffset() - width() - margin, position.x()));
         qreal newY = qMax(margin, qMin(parent->height() - height() - margin, position.y()));
 
         if (!mCustomPosition && !mIsMoving)
@@ -147,7 +173,7 @@ void UBFloatingPalette::moveInsideParent(const QPoint &position)
             }
             else
             {
-                newX = qMax(margin, parent->width() - width() - margin);
+                newX = qMax(margin, parent->width() - getParentRightOffset() - width() - margin);
             }
         }
         move(newX, newY);
@@ -260,7 +286,6 @@ void UBFloatingPalette::minimizePalette(const QPoint& pos)
 	return;
     }
 
-    QSize parentSize = parentWidget()->size();
     if(mMinimizedLocation == eMinimizedLocation_None)
     {
 	//  Verify if we have to minimize this palette
@@ -272,7 +297,7 @@ void UBFloatingPalette::minimizePalette(const QPoint& pos)
 //	{
 //	    mMinimizedLocation = eMinimizedLocation_Top;
 //	}
-	else if(pos.x() == parentSize.width() - width() - 5)
+    else if(pos.x() == parentWidget()->width() - getParentRightOffset() - width() - 5)
 	{
 	    mMinimizedLocation = eMinimizedLocation_Right;
 	}
@@ -292,8 +317,8 @@ void UBFloatingPalette::minimizePalette(const QPoint& pos)
 	//  Restore the palette
 	if(pos.x() > 5 &&
 	   pos.y() > 5 &&
-	   pos.x() < parentSize.width() - width() - 5 &&
-	   pos.y() < parentSize.height() - height() - 5)
+       pos.x() < parentWidget()->width() - getParentRightOffset()  - width() - 5 &&
+       pos.y() < parentWidget()->size().height() - height() - 5)
 	{
 	    mMinimizedLocation = eMinimizedLocation_None;
 	    emit maximizeStart();

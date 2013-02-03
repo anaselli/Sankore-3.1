@@ -6,11 +6,32 @@ var sankoreLang = {
     enter: "Enter your instruction here ...",
     wgt_name: "Associate images",
     reload: "Reload",
-    slate: "Wood",
-    pad: "Pad",
-    none: "None",
+    slate: "slate",
+    pad: "pad",
+    none: "none",
     help: "Help",
-    help_content: "This is an example of help content ..."
+    help_content: 
+"<p> <h2>Associate images</h2> </p>" +
+"<p> <h3>Choose the correct picture</h3> </p>" +
+"<p> Drag and drop the image in the correct area. If the result is incorrect, the area turns in red. If the result is correct, the area turns in green. </p> "+
+"<p> Reload “button” resets the exercises. </p>" +
+"<p> Enter the “Edit” mode to :</p>" +
+"<ul> <li> choose the theme of the App : pad, slate, or none (by default : none), </li>" +
+"<li> modify an exercise or to create  a new one.</li> </ul>" +
+
+"<p>To create a new exercise : </p>" +
+"<ul> <li> click on “New block”,</li>" +
+"<li> insert an instruction clicking on the text field “Enter your instruction here ... ”,</li>" +
+"<li> add picture frames clicking on the “+”,</li>" +
+"<li> drag an drop pictures from your library,</li>" +
+"<li> set the correct image of your activity clicking on the submit button “v” on the frame. </li> </ul>" +
+"<p> To delete a frame, click on the cross button on the frame.</p>" +
+"<p> To replace a picture, click on the reload icon on the frame. </p>" +
+
+"<p> To delete a whole exercise, click on the cross on the left.</p>" +
+
+"<p>“Display” button comes back to the activity.</p>",
+    theme: "Theme"
 };
 
 //main function
@@ -22,9 +43,11 @@ function start(){
     $("#wgt_reload").text(sankoreLang.reload);
     $("#wgt_help").text(sankoreLang.help);
     $("#help").html(sankoreLang.help_content);
-    $(".style_select option[value='1']").text(sankoreLang.slate);
-    $(".style_select option[value='2']").text(sankoreLang.pad);
-    $(".style_select option[value='3']").text(sankoreLang.none);
+    $("#style_select option[value='1']").text(sankoreLang.slate);
+    $("#style_select option[value='2']").text(sankoreLang.pad);
+    $("#style_select option[value='3']").text(sankoreLang.none);
+    var tmpl = $("div.inline label").html();
+    $("div.inline label").html(sankoreLang.theme + tmpl)
     
     if(window.sankore){
         if(sankore.preference("associer","")){
@@ -46,11 +69,13 @@ function start(){
     $("#wgt_help").click(function(){
         var tmp = $(this);
         if($(this).hasClass("open")){
+            $(this).removeClass("help_pad").removeClass("help_wood")
             $("#help").slideUp("100", function(){
                 tmp.removeClass("open");
                 $("#data").show();
             });
-        } else {            
+        } else {
+            ($("#style_select").val() == 1)?$(this).removeClass("help_pad").addClass("help_wood"):$(this).removeClass("help_wood").addClass("help_pad");
             $("#data").hide();
             $("#help").slideDown("100", function(){
                 tmp.addClass("open");
@@ -71,7 +96,7 @@ function start(){
         exportData();
     });
     
-    $(".style_select").change(function (event){
+    $("#style_select").change(function (event){
         changeStyle($(this).find("option:selected").val());
     })
     
@@ -82,7 +107,7 @@ function start(){
                     sankore.enableDropOnWidget(false);
                 $(this).addClass("selected");
                 $("#wgt_edit").removeClass("selected");
-                $(".style_select").css("display","none");
+                $("#parameters").css("display", "none");
                 $(".add_block").remove();
                 $(".cont").each(function(){
                     var container = $(this);
@@ -186,8 +211,7 @@ function start(){
                     sankore.enableDropOnWidget(true);
                 $(this).addClass("selected");
                 $("#wgt_display").removeClass("selected");
-                $(".style_select").css("display","block");
-                
+                $("#parameters").css("display", "block");
                 $(".cont").each(function(){
                     var container = $(this);
                     container.find(".imgs_answers").find(".img_block").each(function(){
@@ -196,8 +220,6 @@ function start(){
                     container.find(".imgs_answers").remove();
                     $("<div class='close_cont'>").appendTo(container);
                     container.find(".text_cont").attr("contenteditable","true");
-                    //container.find(".imgs_cont").sortable("destroy");
-                    //container.find(".imgs_cont").css("background-color", "white");
                     
                     var add_img = $("<div class='add_img'>");
                     container.find(".img_block").each(function(){
@@ -279,7 +301,7 @@ function exportData(){
     if($("#wgt_edit").hasClass("selected")){
         $(".cont").each(function(){
             var cont_obj = new Object();
-            cont_obj.style = $(".style_select").find("option:selected").val();
+            cont_obj.style = $("#style_select").find("option:selected").val();
             cont_obj.text = $(this).find(".text_cont").text();
             cont_obj.mode = "edit";
             cont_obj.imgs = [];
@@ -296,7 +318,7 @@ function exportData(){
     } else {
         $(".cont").each(function(){
             var cont_obj = new Object();
-            cont_obj.style = $(".style_select").find("option:selected").val();
+            cont_obj.style = $("#style_select").find("option:selected").val();
             cont_obj.text = $(this).find(".text_cont").text();
             cont_obj.mode = "display";
             cont_obj.imgs = [];
@@ -325,7 +347,7 @@ function exportData(){
     
     if($(".cont").size() == 0){
         var cont_obj = new Object();
-        cont_obj.style = $(".style_select").find("option:selected").val();
+        cont_obj.style = $("#style_select").find("option:selected").val();
         cont_obj.tmp = "clear";
         array_to_export.push(cont_obj);
     }
@@ -340,11 +362,11 @@ function importData(data){
     for(var i in data){
         if(data[i].tmp){
             changeStyle(data[i].style);
-            $(".style_select").val(data[i].style);
+            $("#style_select").val(data[i].style);
         } else {
             if(i == 0){
                 changeStyle(data[i].style);
-                $(".style_select").val(data[i].style);
+                $("#style_select").val(data[i].style);
             }
             if(data[i].mode == "edit"){          
                 var tmp_array = [];
@@ -623,7 +645,6 @@ function showExample(){
             }
         }
     });
-//container.appendTo("body")
 }
 
 //changing the style
@@ -641,10 +662,10 @@ function changeStyle(val){
             $("#wgt_reload").removeClass("pad_color").removeClass("pad_reload");
             $("#wgt_help").removeClass("pad_color").removeClass("pad_help");
             $("#wgt_edit").removeClass("pad_color").removeClass("pad_edit");
-            $("#wgt_display").removeClass("pad_color").removeClass("pad_edit");
             $("#wgt_name").removeClass("pad_color");
-            $(".style_select").removeClass("pad_select").removeClass("none_select").val(val);
-            $("body, html").removeClass("without_radius");
+            $("#wgt_display").addClass("display_wood");
+            $("#style_select").val(val);
+            $("body, html").removeClass("without_radius").addClass("radius_ft");
             break;
         case "2":
             $(".b_top_left").addClass("btl_pad").removeClass("without_back");
@@ -658,10 +679,10 @@ function changeStyle(val){
             $("#wgt_reload").addClass("pad_color").addClass("pad_reload");
             $("#wgt_help").addClass("pad_color").addClass("pad_help");
             $("#wgt_edit").addClass("pad_color").addClass("pad_edit");
-            $("#wgt_display").addClass("pad_color").addClass("pad_edit");
             $("#wgt_name").addClass("pad_color");
-            $(".style_select").addClass("pad_select").removeClass("none_select").val(val);
-            $("body, html").removeClass("without_radius");
+            $("#wgt_display").removeClass("display_wood");
+            $("#style_select").val(val);
+            $("body, html").removeClass("without_radius").removeClass("radius_ft");
             break;
         case "3":
             $(".b_top_left").addClass("without_back").removeClass("btl_pad");
@@ -675,10 +696,10 @@ function changeStyle(val){
             $("#wgt_help").addClass("pad_color").addClass("pad_help");
             $("#wgt_reload").addClass("pad_color").addClass("pad_reload");
             $("#wgt_edit").addClass("pad_color").addClass("pad_edit");
-            $("#wgt_display").addClass("pad_color").addClass("pad_edit");
             $("#wgt_name").addClass("pad_color");
-            $(".style_select").addClass("none_select").val(val);
-            $("body, html").addClass("without_radius");
+            $("#wgt_display").removeClass("display_wood");
+            $("#style_select").val(val);
+            $("body, html").addClass("without_radius").removeClass("radius_ft");
             break;
     }
 }

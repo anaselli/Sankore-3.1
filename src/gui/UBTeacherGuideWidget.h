@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2012 Webdoc SA
+ * Copyright (C) 2010-2013 Groupement d'Intérêt Public pour l'Education Numérique en Afrique (GIP ENA)
  *
  * This file is part of Open-Sankoré.
  *
  * Open-Sankoré is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License,
+ * the Free Software Foundation, version 3 of the License,
  * with a specific linking exception for the OpenSSL project's
  * "OpenSSL" library (or with modified versions of it that use the
  * same license as the "OpenSSL" library).
@@ -20,6 +20,7 @@
  */
 
 
+
 #ifndef UBTEACHERGUIDEWIDGET_H
 #define UBTEACHERGUIDEWIDGET_H
 
@@ -31,6 +32,7 @@ class QPushButton;
 class UBDocumentProxy;
 class UBGraphicsTextItem;
 class QScrollArea;
+class QDomDocument;
 
 #include "UBTeacherGuideWidgetsTools.h"
 
@@ -56,7 +58,7 @@ public:
     void cleanData();
     QVector<tUBGEElementNode*> getData();
 
-    void load(QString element);
+    void load(QDomDocument element);
     QVector<tIDataStorage*> save(int pageIndex);
 
     bool isModified();
@@ -146,7 +148,7 @@ public:
     bool isModified();
 
 signals:
-	void resized();
+    void resized();
 
 public slots:
     void onActiveSceneChanged();
@@ -212,6 +214,8 @@ private:
     QMap<QString,QString> mGradeLevelsMap;
     QMap<QString,QStringList> mSubjects;
 
+    UBDocumentProxy* mCurrentDocument;
+
 private slots:
     void onSchoolLevelChanged(QString schoolLevel);
     void persistData();
@@ -244,8 +248,8 @@ private:
     bool mKeyboardActionFired;
 
 private slots:
-	void onTriggeredAction(bool checked);
-	void onTriggeredKeyboardAction(bool checked);
+    void onTriggeredAction(bool checked);
+    void onTriggeredKeyboardAction(bool checked);
 };
 
 #endif // UBTEACHERGUIDEWIDGET_H

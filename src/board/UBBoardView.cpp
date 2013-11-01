@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2012 Webdoc SA
+ * Copyright (C) 2010-2013 Groupement d'Intérêt Public pour l'Education Numérique en Afrique (GIP ENA)
  *
  * This file is part of Open-Sankoré.
  *
  * Open-Sankoré is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License,
+ * the Free Software Foundation, version 3 of the License,
  * with a specific linking exception for the OpenSSL project's
  * "OpenSSL" library (or with modified versions of it that use the
  * same license as the "OpenSSL" library).
@@ -18,6 +18,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 
 #include "UBBoardView.h"
@@ -51,6 +52,11 @@
 #include "board/UBBoardController.h"
 #include "board/UBBoardPaletteManager.h"
 
+#ifdef Q_WS_MAC
+#include "desktop/UBDesktopAnnotationController.h"
+#include "desktop/UBDesktopPalette.h"
+#endif
+
 #include "domain/UBGraphicsTextItem.h"
 #include "domain/UBGraphicsPixmapItem.h"
 #include "domain/UBGraphicsWidgetItem.h"
@@ -71,6 +77,8 @@
 #include "tools/UBGraphicsTriangle.h"
 #include "tools/UBGraphicsProtractor.h"
 #include "tools/UBGraphicsAristo.h"
+
+#include "customWidgets/UBGraphicsItemAction.h"
 
 #include "core/memcheck.h"
 
@@ -379,6 +387,18 @@ void UBBoardView::tabletEvent (QTabletEvent * event)
 
     bool acceptEvent = true;
 
+#ifdef Q_WS_MAC
+    //Work around #1388. After selecting annotation tool in desktop mode, annotation view appears on top when
+    //using Mac OS X. In this case tablet event should send mouse event so as to let user interact with
+    //stylus palette.
+    Q_ASSERT(UBApplication::applicationController->uninotesController());
+    if (UBApplication::applicationController->uninotesController()->drawingView() == this) {
+        if (UBApplication::applicationController->uninotesController()->desktopPalettePath().contains(event->pos())) {
+            acceptEvent = false;
+        }
+    }
+#endif
+
     switch (event->type ()) {
     case QEvent::TabletPress: {
         mTabletStylusIsPressed = true;
@@ -533,6 +553,8 @@ Here we determines cases when items should to get mouse press event at pressing 
     // some behavior depends on current tool.
     UBStylusTool::Enum currentTool = (UBStylusTool::Enum)UBDrawingController::drawingController()->stylusTool();
 
+    qDebug() << item->type();
+
     switch(item->type())
     {
     case UBGraphicsProtractor::Type:
@@ -544,8 +566,17 @@ Here we determines cases when items should to get mouse press event at pressing 
         return true;
 
     case UBGraphicsDelegateFrame::Type:
-    case QGraphicsSvgItem::Type:
+        if (currentTool == UBStylusTool::Play)
+            return false;
         return true;
+    case UBGraphicsPixmapItem::Type:
+    case UBGraphicsSvgItem::Type:
+        if (currentTool == UBStylusTool::Play)
+            return true;
+        if (item->isSelected())
+            return true;
+        else
+            return false;
 
     case DelegateButton::Type:
         return true;
@@ -553,9 +584,9 @@ Here we determines cases when items should to get mouse press event at pressing 
     case UBGraphicsMediaItem::Type:
         return false;
 
-    case UBGraphicsSvgItem::Type:
-    case UBGraphicsPixmapItem::Type:
     case UBGraphicsTextItem::Type:
+        if (currentTool == UBStylusTool::Play)
+            return true;
         if ((currentTool == UBStylusTool::Selector) && item->isSelected())
             return true;
         if ((currentTool == UBStylusTool::Selector) && item->parentItem() && item->parentItem()->isSelected())
@@ -564,17 +595,20 @@ Here we determines cases when items should to get mouse press event at pressing 
             return false;
         break;
 
+    case UBGraphicsItemType::StrokeItemType:
+        if (currentTool == UBStylusTool::Play)
+            return true;
+        break;
     // Groups shouldn't reacts on any presses and moves for Play tool.
     case UBGraphicsGroupContainerItem::Type:
         if(currentTool == UBStylusTool::Play)
         {
             movingItem = NULL;
+            return true;
         }
         return false;
         break;
 
-    //case UBToolWidget::Type:
-      //  return true;
 
     case QGraphicsWebView::Type:
         return true;
@@ -588,6 +622,7 @@ Here we determines cases when items should to get mouse press event at pressing 
             return true;
         return false;
         break;
+
     }
 
     return !isUBItem(item); // standard behavior of QGraphicsScene for not UB items. UB items should be managed upper.
@@ -608,6 +643,7 @@ bool UBBoardView::itemShouldReceiveSuspendedMousePressEvent(QGraphicsItem *item)
     case QGraphicsWebView::Type:
         return false;
     case UBGraphicsPixmapItem::Type:
+    case UBGraphicsSvgItem::Type:
     case UBGraphicsTextItem::Type:
     case UBGraphicsWidgetItem::Type:
         if (currentTool == UBStylusTool::Selector && !item->isSelected() && item->parentItem())
@@ -658,6 +694,8 @@ bool UBBoardView::itemShouldBeMoved(QGraphicsItem *item)
 
     case UBGraphicsSvgItem::Type:
     case UBGraphicsPixmapItem::Type:
+        if (currentTool == UBStylusTool::Play || !item->isSelected())
+            return true;
         if (item->isSelected())
             return false;
     case UBGraphicsMediaItem::Type:
@@ -681,12 +719,21 @@ QGraphicsItem* UBBoardView::determineItemToPress(QGraphicsItem *item)
         if (UBStylusTool::Selector == currentTool
             && item->parentItem()
             && UBGraphicsGroupContainerItem::Type == item->parentItem()->type()
-            && !item->parentItem()->isSelected())
+                && !item->parentItem()->isSelected())
             return item->parentItem();
 
         // items like polygons placed in two groups nested, so we need to recursive call.
         if(item->parentItem() && UBGraphicsStrokesGroup::Type == item->parentItem()->type())
             return determineItemToPress(item->parentItem());
+
+        //TODO claudio
+        // another chuck of very good code
+        if(item->parentItem() && UBGraphicsGroupContainerItem::Type == item->parentItem()->type()){
+            UBGraphicsGroupContainerItem* group = qgraphicsitem_cast<UBGraphicsGroupContainerItem*>(item->parentItem());
+            if(group && group->Delegate()->action())
+                group->Delegate()->action()->play();
+        }
+
     }
 
     return item;
@@ -850,11 +897,78 @@ void UBBoardView::setMultiselection(bool enable)
     mMultipleSelectionIsEnabled = enable;
 }
 
+// work around for handling tablet events on MAC OS with Qt 4.8.0 and above
+#if defined(Q_WS_MACX)
+bool UBBoardView::directTabletEvent(QEvent *event)
+{
+    QTabletEvent *tEvent = static_cast<QTabletEvent *>(event);
+    tEvent = new QTabletEvent(tEvent->type()
+        , mapFromGlobal(tEvent->pos())
+        , tEvent->globalPos()
+        , tEvent->hiResGlobalPos()
+        , tEvent->device()
+        , tEvent->pointerType()
+        , tEvent->pressure()
+        , tEvent->xTilt()
+        , tEvent->yTilt()
+        , tEvent->tangentialPressure()
+        , tEvent->rotation()
+        , tEvent->z()
+        , tEvent->modifiers()
+        , tEvent->uniqueId());
+
+    if (geometry().contains(tEvent->pos()))
+    {
+        if (NULL == widgetForTabletEvent(this->parentWidget(), tEvent->pos()))
+        {
+            tabletEvent(tEvent);
+            return true;
+        }
+    }
+    return false;
+}
+
+QWidget *UBBoardView::widgetForTabletEvent(QWidget *w, const QPoint &pos)
+{
+    Q_ASSERT(w);
+
+    // it should work that, but it doesn't. So we check if it is control view.
+    //UBBoardView *board = qobject_cast<UBBoardView *>(w);
+    UBBoardView *board = UBApplication::boardController->controlView();
+
+    QWidget *childAtPos = NULL;
+
+    QList<QObject *> childs = w->children();
+    foreach(QObject *child, childs)
+    {
+        QWidget *childWidget = qobject_cast<QWidget *>(child);
+        if (childWidget)
+        {
+            if (childWidget->isVisible() && childWidget->geometry().contains(pos))
+            {
+                QWidget *lastChild = widgetForTabletEvent(childWidget, pos);
+
+                if (board && board->viewport() == lastChild)
+                    continue;
+
+                if (NULL != lastChild)
+                    childAtPos = lastChild;
+                else
+                    childAtPos = childWidget;
+
+                break;
+            }
+            else
+                childAtPos = NULL;
+        }
+    }
+    return childAtPos;
+}
+#endif
 void UBBoardView::longPressEvent()
 {
    UBDrawingController *drawingController = UBDrawingController::drawingController();
    UBStylusTool::Enum currentTool = (UBStylusTool::Enum)UBDrawingController::drawingController ()->stylusTool ();
-
 
    disconnect(&mLongPressTimer, SIGNAL(timeout()), this, SLOT(longPressEvent()));
 
@@ -1057,6 +1171,11 @@ UBBoardView::mouseMoveEvent (QMouseEvent *event)
           return;
       }
 
+      if(currentTool == UBStylusTool::Play && movingItem->data(UBGraphicsItemData::ItemLocked).toBool()){
+          event->accept();
+          return;
+      }
+
       if (currentTool != UBStylusTool::Play || mRubberBandInPlayMode) {
 
           if (!movingItem && (mMouseButtonIsPressed || mTabletStylusIsPressed) && mUBRubberBand && mUBRubberBand->isVisible()) {
@@ -1160,7 +1279,7 @@ UBBoardView::mouseReleaseEvent (QMouseEvent *event)
           movingItem = NULL;
       }
       else
-      if (movingItem && !isCppTool(movingItem))
+      if (movingItem && (!isCppTool(movingItem) || UBGraphicsCurtainItem::Type == movingItem->type()))
       {
           if (suspendedMousePressEvent)
           {
@@ -1174,7 +1293,6 @@ UBBoardView::mouseReleaseEvent (QMouseEvent *event)
           {
              if (isUBItem(movingItem) &&
                 DelegateButton::Type != movingItem->type() &&
-                QGraphicsSvgItem::Type !=  movingItem->type() &&
                 UBGraphicsDelegateFrame::Type !=  movingItem->type() &&
                 UBGraphicsCache::Type != movingItem->type() &&
                 QGraphicsWebView::Type != movingItem->type() && // for W3C widgets as Tools.

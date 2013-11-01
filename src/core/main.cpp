@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2012 Webdoc SA
+ * Copyright (C) 2010-2013 Groupement d'Intérêt Public pour l'Education Numérique en Afrique (GIP ENA)
  *
  * This file is part of Open-Sankoré.
  *
  * Open-Sankoré is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License,
+ * the Free Software Foundation, version 3 of the License,
  * with a specific linking exception for the OpenSSL project's
  * "OpenSSL" library (or with modified versions of it that use the
  * same license as the "OpenSSL" library).
@@ -18,6 +18,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 
 #include <QtGui>
@@ -116,7 +117,7 @@ int main(int argc, char *argv[])
 
     QString fileToOpen;
 
-    if (args.size() > 1) {
+      if (args.size() > 1) {
         // On Windows/Linux first argument is the file that has been double clicked.
         // On Mac OSX we use FileOpen QEvent to manage opening file in current instance. So we will never
         // have file to open as a parameter on OSX.
@@ -125,12 +126,15 @@ int main(int argc, char *argv[])
 
         if (f.exists()) {
             fileToOpen += args[1];
-
-            if (app.sendMessage(UBSettings::appPingMessage, 20000)) {
-                app.sendMessage(fileToOpen, 1000000);
-                return 0;
-            }
         }
+    }
+
+    //Hotfix. We allways have the single instance application independent from number of parameters
+    if (app.sendMessage(UBSettings::appPingMessage, 20000)) {
+        if (!fileToOpen.isNull()) {
+            app.sendMessage(fileToOpen, 1000000);
+        }
+        return 0;
     }
 
     app.initialize(false);

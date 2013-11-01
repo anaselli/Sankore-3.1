@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2012 Webdoc SA
+ * Copyright (C) 2010-2013 Groupement d'Intérêt Public pour l'Education Numérique en Afrique (GIP ENA)
  *
  * This file is part of Open-Sankoré.
  *
  * Open-Sankoré is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License,
+ * the Free Software Foundation, version 3 of the License,
  * with a specific linking exception for the OpenSSL project's
  * "OpenSSL" library (or with modified versions of it that use the
  * same license as the "OpenSSL" library).
@@ -26,8 +26,10 @@
 
 #include "core/UBDocumentManager.h"
 #include "core/UBApplication.h"
+#include "core/UBForeignObjectsHandler.h"
 
 #include "document/UBDocumentProxy.h"
+#include "document/UBDocumentController.h"
 
 #include "globals/UBGlobals.h"
 
@@ -61,6 +63,10 @@ void UBExportDocument::persist(UBDocumentProxy* pDocumentProxy)
     if (filename.length() > 0)
     {
         QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
+
+        //Processing cleanUp for unused data
+        UBForeighnObjectsHandler cleaner;
+        cleaner.cure(QUrl::fromLocalFile(pDocumentProxy->persistencePath()));
 
         if (mIsVerbose)
             UBApplication::showMessage(tr("Exporting document..."));
@@ -125,3 +131,14 @@ QString UBExportDocument::exportName()
 {
     return tr("Export to Sankore Format");
 }
+
+bool UBExportDocument::associatedActionactionAvailableFor(const QModelIndex &selectedIndex)
+{
+    const UBDocumentTreeModel *docModel = qobject_cast<const UBDocumentTreeModel*>(selectedIndex.model());
+    if (!selectedIndex.isValid() || docModel->isCatalog(selectedIndex)) {
+        return false;
+    }
+
+    return true;
+}
+

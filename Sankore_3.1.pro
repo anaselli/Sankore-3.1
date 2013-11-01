@@ -9,9 +9,9 @@ CONFIG += debug_and_release \
 
 
 VERSION_MAJ = 2
-VERSION_MIN = 00 
+VERSION_MIN = 2
 VERSION_TYPE = r # a = alpha, b = beta, r = release, other => error
-VERSION_PATCH = 00 
+VERSION_PATCH = 0
 
 VERSION = "$${VERSION_MAJ}.$${VERSION_MIN}.$${VERSION_TYPE}.$${VERSION_PATCH}"
 VERSION = $$replace(VERSION, "\\.r", "")
@@ -96,7 +96,7 @@ BUILD_DIR = build
 
 macx:BUILD_DIR = $$BUILD_DIR/macx
 win32:BUILD_DIR = $$BUILD_DIR/win32
-linux-g++*:BUILD_DIR = $$BUILD_DIR/linux
+linux-*:BUILD_DIR = $$BUILD_DIR/linux
 
 CONFIG(debug, debug|release):BUILD_DIR = $$BUILD_DIR/debug
 CONFIG(release, debug|release) {
@@ -129,10 +129,10 @@ win32 {
 }
 
 macx {
-   LIBS += -framework Foundation 
+   LIBS += -framework Foundation
    LIBS += -lcrypto
    #commented because Sankore crashes on Java Script. It seems to backends dependencies.
-   #LIBS += -framework AppKit 
+   #LIBS += -framework AppKit
    #LIBS += -framework WebKit
 
    CONFIG(release, debug|release):CONFIG += x86
@@ -352,7 +352,37 @@ macx {
        TRANSLATION_mg.path = "$$RESOURCES_DIR/mg.lproj"
        QMAKE_BUNDLE_DATA += TRANSLATION_mg
    }
-   
+   exists(resources/i18n/sankore_hi.qm) {
+       TRANSLATION_hi.files = resources/i18n/sankore_hi.qm \
+           resources/i18n/localizable.strings
+       TRANSLATION_hi.path = "$$RESOURCES_DIR/hi.lproj"
+       QMAKE_BUNDLE_DATA += TRANSLATION_hi
+   }
+   exists(resources/i18n/sankore_co.qm) {
+       TRANSLATION_co.files = resources/i18n/sankore_co.qm \
+           resources/i18n/localizable.strings
+       TRANSLATION_co.path = "$$RESOURCES_DIR/co.lproj"
+       QMAKE_BUNDLE_DATA += TRANSLATION_co
+   }
+   exists(resources/i18n/sankore_eu.qm) {
+       TRANSLATION_eu.files = resources/i18n/sankore_eu.qm \
+           resources/i18n/localizable.strings
+       TRANSLATION_eu.path = "$$RESOURCES_DIR/eu.lproj"
+       QMAKE_BUNDLE_DATA += TRANSLATION_eu
+   }
+   exists(resources/i18n/sankore_bm.qm) {
+       TRANSLATION_bm.files = resources/i18n/sankore_bm.qm \
+           resources/i18n/localizable.strings
+       TRANSLATION_bm.path = "$$RESOURCES_DIR/bm.lproj"
+       QMAKE_BUNDLE_DATA += TRANSLATION_bm
+   }
+   exists(resources/i18n/sankore_gl.qm) {
+       TRANSLATION_gl.files = resources/i18n/sankore_gl.qm \
+           resources/i18n/localizable.strings
+       TRANSLATION_gl.path = "$$RESOURCES_DIR/gl.lproj"
+       QMAKE_BUNDLE_DATA += TRANSLATION_gl
+   }
+
    QMAKE_BUNDLE_DATA += UB_ETC \
        UB_LIBRARY \
        UB_FONTS \
@@ -372,7 +402,7 @@ macx {
    system(printf "%02x%02x%02x%02x" `printf $$VERSION_RC | cut -d ',' -f 1` `printf $$VERSION_RC | cut -d ',' -f 2` `printf $$VERSION_RC | cut -d ',' -f 3` `printf $$VERSION_RC | cut -d ',' -f 4` | xxd -r -p > "$$VERSION_RC_PATH")
 }
 
-linux-g++* {
+linux-* {
     CONFIG += link_prl
     LIBS += -lcrypto
     LIBS += -lX11
@@ -387,6 +417,11 @@ linux-g++* {
     system(echo "$$VERSION" > $$BUILD_DIR/version)
     system(echo "$$LONG_VERSION" > $$BUILD_DIR/longversion)
     system(echo "$$SVN_VERSION" > $$BUILD_DIR/svnversion)
+
+    linux-clang {
+        QMAKE_CXXFLAGS_WARN_ON += -Wno-unknown-pragmas
+        QMAKE_CXXFLAGS_WARN_ON += -Wno-overloaded-virtual
+    }
 }
 
 RESOURCES += resources/sankore.qrc
@@ -421,10 +456,22 @@ TRANSLATIONS = resources/i18n/sankore_en.ts \
    resources/i18n/sankore_el.ts \
    resources/i18n/sankore_tr.ts \
    resources/i18n/sankore_cs.ts \
-   resources/i18n/sankore_mg.ts
+   resources/i18n/sankore_mg.ts \
+   resources/i18n/sankore_hi.ts \
+   resources/i18n/sankore_co.ts \
+   resources/i18n/sankore_eu.ts \
+   resources/i18n/sankore_bm.ts \
+   resources/i18n/sankore_gl.ts
 
 INSTALLS = UB_ETC \
    UB_I18N \
    UB_LIBRARY \
    UB_THIRDPARTY_INTERACTIVE
+
+OTHER_FILES += \
+    resources/library/shape/fleche blanche.svg \
+    resources/library/shape/fleche bleue.svg \
+    resources/library/shape/fleche grise.svg \
+    resources/library/shape/fleche rouge.svg \
+    resources/library/shape/fleche vide.svg
 

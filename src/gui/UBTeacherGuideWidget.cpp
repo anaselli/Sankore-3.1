@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2012 Webdoc SA
+ * Copyright (C) 2010-2013 Groupement d'Intérêt Public pour l'Education Numérique en Afrique (GIP ENA)
  *
  * This file is part of Open-Sankoré.
  *
  * Open-Sankoré is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License,
+ * the Free Software Foundation, version 3 of the License,
  * with a specific linking exception for the OpenSSL project's
  * "OpenSSL" library (or with modified versions of it that use the
  * same license as the "OpenSSL" library).
@@ -18,6 +18,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 
 #include <QDebug>
@@ -134,7 +135,7 @@ UBTeacherGuideEditionWidget::UBTeacherGuideEditionWidget(QWidget *parent, const 
     connect(UBApplication::boardController, SIGNAL(activeSceneChanged()), this, SLOT(onActiveSceneChanged()));
 
 #ifdef Q_WS_MAC
-    // on mac and with the custom qt the widget on the tree are not automatically relocated when using the vertical scrollbar. To relocate them we link the valueChange signal of the vertical scrollbar witht a local signal to trig a change and a repaint of the tree widget
+    // on mac and with the custom qt the widget on the tree are not automatically relocated when using the vertical scrollbar. To relocate them we link the valueChange signal of the vertical scrollbar with a local signal to trig a change and a repaint of the tree widget
     connect(mpTreeWidget->verticalScrollBar(),SIGNAL(valueChanged(int)),this,SLOT(onSliderMoved(int)));
 #endif
 
@@ -187,12 +188,10 @@ void UBTeacherGuideEditionWidget::onActiveDocumentChanged()
         load(UBSvgSubsetAdaptor::readTeacherGuideNode(activeSceneIndex));
 }
 
-void UBTeacherGuideEditionWidget::load(QString element)
+void UBTeacherGuideEditionWidget::load(QDomDocument doc)
 {
+    qDebug() << "LOAD UBApplication::boardController->currentPage() " << UBApplication::boardController->currentPage();
     cleanData();
-    QDomDocument doc("TeacherGuide");
-    doc.setContent(element);
-
     for (QDomElement element = doc.documentElement().firstChildElement();
          !element.isNull(); element = element.nextSiblingElement()) {
         QString tagName = element.tagName();
@@ -211,6 +210,9 @@ void UBTeacherGuideEditionWidget::load(QString element)
 
 QVector<tIDataStorage*> UBTeacherGuideEditionWidget::save(int pageIndex)
 {
+    qDebug() << "SAVE page index : " << pageIndex;
+    qDebug() << "SAVE UBApplication::boardController->currentPage() " << UBApplication::boardController->currentPage();
+
     QVector<tIDataStorage*> result;
     if (pageIndex != UBApplication::boardController->currentPage())
         return result;
@@ -272,8 +274,8 @@ void UBTeacherGuideEditionWidget::onActiveSceneChanged()
 
 void UBTeacherGuideEditionWidget::cleanData()
 {
-    mpPageTitle->setText("");
-    mpComment->setText("");
+    mpPageTitle->resetText();
+    mpComment->resetText();
     QList<QTreeWidgetItem*> children = mpAddAnActionItem->takeChildren();
     children << mpAddAMediaItem->takeChildren();
     children << mpAddALinkItem->takeChildren();
@@ -507,6 +509,7 @@ void UBTeacherGuidePresentationWidget::onSliderMoved(int size)
 bool UBTeacherGuidePresentationWidget::eventFilter(QObject* object, QEvent* event)
 {
     Q_UNUSED(object);
+
     if (event->type() == QEvent::HoverEnter || event->type() == QEvent::HoverMove || event->type() == QEvent::HoverLeave)
         return true;
     return false;
@@ -551,6 +554,12 @@ void UBTeacherGuidePresentationWidget::createMediaButtonItem()
 void UBTeacherGuidePresentationWidget::showData( QVector<tUBGEElementNode*> data)
 {
     cleanData();
+ #ifdef Q_WS_MAC
+    if(mpMediaSwitchItem && mpMediaSwitchItem->isDisabled()){
+        mpRootWidgetItem->removeChild(mpMediaSwitchItem);
+        DELETEPTR(mpMediaSwitchItem);
+    }
+#endif
 
     foreach(tUBGEElementNode* element, data) {
         if (element->name == "pageTitle")
@@ -592,7 +601,7 @@ void UBTeacherGuidePresentationWidget::showData( QVector<tUBGEElementNode*> data
             mediaItem->setData(0, tUBTGTreeWidgetItemRole_HasAnAction, tUBTGActionAssociateOnClickItem_NONE);
             qDebug() << element->attributes.value("mediaType");
             UBTGMediaWidget* mediaWidget = new UBTGMediaWidget(element->attributes.value("relativePath"), newWidgetItem,0,element->attributes.value("mediaType").contains("flash"));
-            newWidgetItem->setExpanded(false);
+            newWidgetItem->setExpanded(mpMediaSwitchItem->isExpanded());
             mpTreeWidget->setItemWidget(mediaItem, 0, mediaWidget);
         }
         else if (element->name == "link") {
@@ -607,6 +616,23 @@ void UBTeacherGuidePresentationWidget::showData( QVector<tUBGEElementNode*> data
             mpRootWidgetItem->addChild(newWidgetItem);
         }
     }
+
+#ifdef Q_WS_MAC
+    //HACK: on mac only this hack allows to correctly diplay a teacher bar containing only actions if those
+    // actions need more that the vertical available space.
+    // In this particular case if mpMediaSwitchItem isn't added to the widget tree then the vertical scrollbar
+    // doesn't send any signal when moved.
+
+    if(!mpMediaSwitchItem){
+        mpMediaSwitchItem = new QTreeWidgetItem(mpRootWidgetItem);
+        mpMediaSwitchItem->setDisabled(true);
+        mpRootWidgetItem->addChild(mpMediaSwitchItem);
+    }
+    else{
+        onAddItemClicked(mpMediaSwitchItem,0);
+        onAddItemClicked(mpMediaSwitchItem,0);
+    }
+#endif
 }
 
 void UBTeacherGuidePresentationWidget::onAddItemClicked(QTreeWidgetItem* widget, int column)
@@ -616,10 +642,24 @@ void UBTeacherGuidePresentationWidget::onAddItemClicked(QTreeWidgetItem* widget,
         switch (associateAction) {
         case tUBTGActionAssociateOnClickItem_EXPAND:
             widget->setExpanded(!widget->isExpanded());
-            if (widget->isExpanded())
+            if (widget->isExpanded()){
+#ifdef Q_WS_MAC
+                for(int i = 0 ; i < mpMediaSwitchItem->childCount(); i+=1 ){
+                    QTreeWidgetItem* eachItem = mpMediaSwitchItem->child(i);
+                    eachItem->setHidden(false);
+                }
+#endif
                 mpMediaSwitchItem->setText(0, "-");
-            else
+            }
+            else{
+#ifdef Q_WS_MAC
+                for(int i = 0 ; i < mpMediaSwitchItem->childCount(); i+=1 ){
+                    QTreeWidgetItem* eachItem = mpMediaSwitchItem->child(i);
+                    eachItem->setHidden(true);
+                }
+#endif
                 mpMediaSwitchItem->setText(0, "+");
+            }
             break;
         case tUBTGActionAssociateOnClickItem_URL:
             widget->data(column, tUBTGTreeWidgetItemRole_HasAnUrl).toString();
@@ -674,6 +714,7 @@ UBTeacherGuidePageZeroWidget::UBTeacherGuidePageZeroWidget(QWidget* parent, cons
   , mpLicenceIcon(NULL)
   , mpLicenceLayout(NULL)
   , mpSceneItemSessionTitle(NULL)
+  , mCurrentDocument(NULL)
 {
     setObjectName(name);
     QString chapterStyle("QLabel {font-size:16px; font-weight:bold;}");
@@ -931,7 +972,7 @@ void UBTeacherGuidePageZeroWidget::fillComboBoxes()
     QStringList licences;
     licences << tr("Attribution-ShareAlike CC BY-SA")
              << tr("Attribution CC BY")
-    		 << tr("Attribution-NoDerivs CC BY-ND")
+             << tr("Attribution-NoDerivs CC BY-ND")
              << tr("Attribution-NonCommercial CC BY-NC")
              << tr("Attribution-NonCommercial-NoDerivs CC BY-NC-ND")
              << tr("Attribution-NonCommercial-ShareAlike CC BY-NC-SA")
@@ -985,7 +1026,9 @@ void UBTeacherGuidePageZeroWidget::hideEvent(QHideEvent * event)
 
 void UBTeacherGuidePageZeroWidget::loadData()
 {
-    UBDocumentProxy* documentProxy = UBApplication::boardController->selectedDocument();
+    //UBDocumentProxy* documentProxy = UBApplication::boardController->selectedDocument();
+    mCurrentDocument = UBApplication::boardController->selectedDocument();
+    UBDocumentProxy* documentProxy = mCurrentDocument;
     mpSessionTitle->setText( documentProxy->metaData(UBSettings::sessionTitle).toString());
     mpAuthors->setText( documentProxy->metaData(UBSettings::sessionAuthors).toString());
     mpObjectives->setText( documentProxy->metaData(UBSettings::sessionObjectives).toString());
@@ -1010,6 +1053,12 @@ void UBTeacherGuidePageZeroWidget::persistData()
     // to NULL
     if (UBApplication::boardController) {
         UBDocumentProxy* documentProxy = UBApplication::boardController->selectedDocument();
+
+        if(mCurrentDocument != documentProxy){
+            qDebug() << "this should never happens";
+            return;
+        }
+
         documentProxy->setMetaData(UBSettings::sessionTitle, mpSessionTitle->text());
         documentProxy->setMetaData(UBSettings::sessionAuthors, mpAuthors->text());
         documentProxy->setMetaData(UBSettings::sessionObjectives, mpObjectives->text());
@@ -1154,21 +1203,27 @@ QVector<tUBGEElementNode*> UBTeacherGuidePageZeroWidget::getData()
 bool UBTeacherGuidePageZeroWidget::isModified()
 {
     bool result = false;
-    result |= mpSessionTitle->text().length() > 0;
-    result |= mpAuthors->text().length() > 0;
-    result |= mpObjectives->text().length() > 0;
-    result |= mpKeywords->text().length() > 0;
-    result |= mpSchoolLevelBox->currentIndex() > 0;
-    result |= mpSchoolSubjectsBox->currentIndex() > 0;
-    result |= mpSchoolTypeBox->currentIndex() > 0;
-    result |= mpLicenceBox->currentIndex() > 0;
+    UBDocumentProxy* documentProxy = UBApplication::boardController->selectedDocument();
+    if(mCurrentDocument == documentProxy){
+        result |= mpSessionTitle->text().length() > 0;
+        result |= mpAuthors->text().length() > 0;
+        result |= mpObjectives->text().length() > 0;
+        result |= mpKeywords->text().length() > 0;
+        result |= mpSchoolLevelBox->currentIndex() > 0;
+        result |= mpSchoolSubjectsBox->currentIndex() > 0;
+        result |= mpSchoolTypeBox->currentIndex() > 0;
+        result |= mpLicenceBox->currentIndex() > 0;
+    }
+    else
+        qDebug() << "this should not happen";
+
     return result;
 }
 
 void UBTeacherGuidePageZeroWidget::resizeEvent(QResizeEvent* ev)
 {
-	emit resized();
-	QWidget::resizeEvent(ev);
+    emit resized();
+    QWidget::resizeEvent(ev);
 }
 
 /***************************************************************************
@@ -1208,54 +1263,54 @@ UBTeacherGuideWidget::~UBTeacherGuideWidget()
 void UBTeacherGuideWidget::onActiveSceneChanged()
 {
     if (UBApplication::boardController->currentPage() == 0) {
-    	if(mpPageZeroWidget->isModified())
-    		mpPageZeroWidget->switchToMode(tUBTGZeroPageMode_PRESENTATION);
-    	else
-    		mpPageZeroWidget->switchToMode(tUBTGZeroPageMode_EDITION);
+        if(mpPageZeroWidget->isModified())
+            mpPageZeroWidget->switchToMode(tUBTGZeroPageMode_PRESENTATION);
+        else
+            mpPageZeroWidget->switchToMode(tUBTGZeroPageMode_EDITION);
 
         setCurrentWidget(mpPageZeroWidget);
     }
     else{
-    	if(mpEditionWidget->isModified()){
+        if(mpEditionWidget->isModified()){
             mCurrentData = mpEditionWidget->getData();
             mpPresentationWidget->showData(mCurrentData);
-    		setCurrentWidget(mpPresentationWidget);
-    	}
-    	else
-    		setCurrentWidget(mpEditionWidget);
+            setCurrentWidget(mpPresentationWidget);
+        }
+        else
+            setCurrentWidget(mpEditionWidget);
     }
 
 }
 
 void UBTeacherGuideWidget::onTriggeredAction(bool checked)
 {
-	Q_UNUSED(checked);
-	if(!mKeyboardActionFired)
-		showPresentationMode();
-	mKeyboardActionFired=false;
+    Q_UNUSED(checked);
+    if(!mKeyboardActionFired)
+        showPresentationMode();
+    mKeyboardActionFired=false;
 }
 
 void UBTeacherGuideWidget::onTriggeredKeyboardAction(bool checked)
 {
-	Q_UNUSED(checked);
-	mKeyboardActionFired = true;
+    Q_UNUSED(checked);
+    mKeyboardActionFired = true;
 }
 
 void UBTeacherGuideWidget::connectToStylusPalette()
 {
-	connect(UBApplication::mainWindow->actionPen, SIGNAL(triggered(bool)), this, SLOT(onTriggeredAction(bool)));
-	connect(UBApplication::mainWindow->actionEraser, SIGNAL(triggered(bool)), this, SLOT(onTriggeredAction(bool)));
-	connect(UBApplication::mainWindow->actionMarker, SIGNAL(triggered(bool)), this, SLOT(onTriggeredAction(bool)));
-	connect(UBApplication::mainWindow->actionPointer, SIGNAL(triggered(bool)), this, SLOT(onTriggeredAction(bool)));
-	connect(UBApplication::mainWindow->actionPlay, SIGNAL(triggered(bool)), this, SLOT(onTriggeredAction(bool)));
-	connect(UBApplication::mainWindow->actionZoomIn, SIGNAL(triggered(bool)), this, SLOT(onTriggeredAction(bool)));
-	connect(UBApplication::mainWindow->actionZoomOut, SIGNAL(triggered(bool)), this, SLOT(onTriggeredAction(bool)));
+    connect(UBApplication::mainWindow->actionPen, SIGNAL(triggered(bool)), this, SLOT(onTriggeredAction(bool)));
+    connect(UBApplication::mainWindow->actionEraser, SIGNAL(triggered(bool)), this, SLOT(onTriggeredAction(bool)));
+    connect(UBApplication::mainWindow->actionMarker, SIGNAL(triggered(bool)), this, SLOT(onTriggeredAction(bool)));
+    connect(UBApplication::mainWindow->actionPointer, SIGNAL(triggered(bool)), this, SLOT(onTriggeredAction(bool)));
+    connect(UBApplication::mainWindow->actionPlay, SIGNAL(triggered(bool)), this, SLOT(onTriggeredAction(bool)));
+    connect(UBApplication::mainWindow->actionZoomIn, SIGNAL(triggered(bool)), this, SLOT(onTriggeredAction(bool)));
+    connect(UBApplication::mainWindow->actionZoomOut, SIGNAL(triggered(bool)), this, SLOT(onTriggeredAction(bool)));
     connect(UBApplication::mainWindow->actionCapture, SIGNAL(triggered(bool)), this, SLOT(onTriggeredAction(bool)));
-	connect(UBApplication::mainWindow->actionHand, SIGNAL(triggered(bool)), this, SLOT(onTriggeredAction(bool)));
-	connect(UBApplication::mainWindow->actionLine, SIGNAL(triggered(bool)), this, SLOT(onTriggeredAction(bool)));
-	connect(UBApplication::mainWindow->actionText, SIGNAL(triggered(bool)), this, SLOT(onTriggeredAction(bool)));
-	connect(UBApplication::mainWindow->actionSelector, SIGNAL(triggered(bool)), this, SLOT(onTriggeredAction(bool)));
-	connect(UBApplication::mainWindow->actionVirtualKeyboard, SIGNAL(triggered(bool)), this, SLOT(onTriggeredKeyboardAction(bool)));
+    connect(UBApplication::mainWindow->actionHand, SIGNAL(triggered(bool)), this, SLOT(onTriggeredAction(bool)));
+    connect(UBApplication::mainWindow->actionLine, SIGNAL(triggered(bool)), this, SLOT(onTriggeredAction(bool)));
+    connect(UBApplication::mainWindow->actionText, SIGNAL(triggered(bool)), this, SLOT(onTriggeredAction(bool)));
+    connect(UBApplication::mainWindow->actionSelector, SIGNAL(triggered(bool)), this, SLOT(onTriggeredAction(bool)));
+    connect(UBApplication::mainWindow->actionVirtualKeyboard, SIGNAL(triggered(bool)), this, SLOT(onTriggeredKeyboardAction(bool)));
 }
 
 void UBTeacherGuideWidget::showPresentationMode()
@@ -1287,4 +1342,3 @@ bool UBTeacherGuideWidget::isModified()
     else
         return mpEditionWidget->isModified();
 }
-

@@ -70,6 +70,10 @@ set CUSTOMIZATIONS=build\win32\release\product\customizations
 mkdir %CUSTOMIZATIONS%
 xcopy /s resources\customizations %CUSTOMIZATIONS%
 
+set STARTUP_HINTS=build\win32\release\product\startupHints
+mkdir %STARTUP_HINTS%
+xcopy /s resources\startupHints %STARTUP_HINTS%
+
 set I18n=build\win32\release\product\i18n
 xcopy /s %BASE_QT_TRANSLATIONS_DIRECTORY%\qt_*.qm %I18n%\
 
@@ -85,8 +89,9 @@ call "%INNO_EXE%" "Sankore 3.1.iss" /F"%INSTALLER_NAME%"
 
 set INSTALL_DIRECTORY=install\win32\
 xcopy *.pdf %INSTALL_DIRECTORY%
+xcopy LICENSE.txt %INSTALL_DIRECTORY%
 cd %INSTALL_DIRECTORY%
-call %SEVEN_ZIP_EXE% a Open-Sankor‚_Windows_%VERSION%.zip *.exe *.pdf
+call %SEVEN_ZIP_EXE% a Open-Sankor‚_Windows_%VERSION%.zip *.exe *.pdf *.txt
 cd ..\..\
 GOTO END
 

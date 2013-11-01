@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2012 Webdoc SA
+ * Copyright (C) 2010-2013 Groupement d'Intérêt Public pour l'Education Numérique en Afrique (GIP ENA)
  *
  * This file is part of Open-Sankoré.
  *
  * Open-Sankoré is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License,
+ * the Free Software Foundation, version 3 of the License,
  * with a specific linking exception for the OpenSSL project's
  * "OpenSSL" library (or with modified versions of it that use the
  * same license as the "OpenSSL" library).
@@ -20,10 +20,12 @@
  */
 
 
+
 #ifndef UBTOOLWIDGET_H_
 #define UBTOOLWIDGET_H_
 
 #include <QtGui>
+#include <core/UBApplicationController.h>
 
 class UBGraphicsWidgetItem;
 class QWidget;
@@ -58,6 +60,7 @@ class UBToolWidget : public QWidget
 
     private slots:
         void javaScriptWindowObjectCleared();
+        void reactOnBoardChanged();
 
     protected:
         QWebView *mWebView;
@@ -70,6 +73,7 @@ class UBToolWidget : public QWidget
         bool mShouldMoveWidget;
         int mContentMargin;
         int mFrameWidth;
+        QPointer<UBGraphicsScene> mScene;
 };
 
 #endif /* UBTOOLWIDGET_H_ */

@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2012 Webdoc SA
+ * Copyright (C) 2010-2013 Groupement d'Intérêt Public pour l'Education Numérique en Afrique (GIP ENA)
  *
  * This file is part of Open-Sankoré.
  *
  * Open-Sankoré is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License,
+ * the Free Software Foundation, version 3 of the License,
  * with a specific linking exception for the OpenSSL project's
  * "OpenSSL" library (or with modified versions of it that use the
  * same license as the "OpenSSL" library).
@@ -18,6 +18,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 
 #include <QtGui>
@@ -33,6 +34,7 @@
 #include "frameworks/UBPlatformUtils.h"
 #include "frameworks/UBFileSystemUtils.h"
 #include "core/memcheck.h"
+#include "document/UBDocumentController.h"
 
 
 QPixmap* UBToolWidget::sClosePixmap = 0;
@@ -66,6 +68,7 @@ UBToolWidget::UBToolWidget(UBGraphicsWidgetItem *pWidget, QWidget *pParent)
     , mShouldMoveWidget(false)
     , mContentMargin(0)
     , mFrameWidth(0)
+    , mScene(0)
 
 {
     initialize();
@@ -90,6 +93,7 @@ void UBToolWidget::initialize()
     {
         wscene->removeItemFromDeletion(mToolWidget);
         wscene->removeItem(mToolWidget);
+        mScene = wscene;
     }
 
 
@@ -120,6 +124,7 @@ void UBToolWidget::initialize()
 
 
     connect(UBApplication::boardController, SIGNAL(activeSceneChanged()), this, SLOT(javaScriptWindowObjectCleared()));
+    connect(UBApplication::boardController, SIGNAL(activeSceneChanged()), this, SLOT(reactOnBoardChanged()));
 }
 
 
@@ -216,6 +221,15 @@ void UBToolWidget::javaScriptWindowObjectCleared()
         UBW3CWidgetAPI* widgetAPI = new UBW3CWidgetAPI(graphicsW3cWidgetItem);
         mWebView->page()->mainFrame()->addToJavaScriptWindowObject("widget", widgetAPI);
     }
+}
+
+void UBToolWidget::reactOnBoardChanged()
+{
+    if (!mScene) {
+        return;
+    }
+
+    UBApplication::boardController->selectedDocument() == mScene->document() ? show() : hide();
 }
 
 UBGraphicsWidgetItem* UBToolWidget::toolWidget() const

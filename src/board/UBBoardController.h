@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2012 Webdoc SA
+ * Copyright (C) 2010-2013 Groupement d'Intérêt Public pour l'Education Numérique en Afrique (GIP ENA)
  *
  * This file is part of Open-Sankoré.
  *
  * Open-Sankoré is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License,
+ * the Free Software Foundation, version 3 of the License,
  * with a specific linking exception for the OpenSSL project's
  * "OpenSSL" library (or with modified versions of it that use the
  * same license as the "OpenSSL" library).
@@ -18,6 +18,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 
 #ifndef UBBOARDCONTROLLER_H_
@@ -48,7 +49,14 @@ class UBGraphicsWidgetItem;
 class UBBoardPaletteManager;
 class UBItem;
 class UBGraphicsItem;
+class UBDocumentNavigator;
 
+
+typedef enum{
+    eItemActionType_Default,
+    eItemActionType_Duplicate,
+    eItemActionType_Paste
+}eItemActionType;
 
 class UBBoardController : public UBDocumentContainer
 {
@@ -67,6 +75,7 @@ class UBBoardController : public UBDocumentContainer
         QSize controlViewport();
         QRectF controlGeometry();
         void closing();
+        void addLinkToPage(QString sourceUrl, QSize size = QSize(340,200), QPointF pos = QPointF(0,0), const QString &embedCode = QString());
 
         int currentPage();
 
@@ -143,7 +152,7 @@ class UBBoardController : public UBDocumentContainer
             return mSystemScaleFactor;
         }
         qreal currentZoom();
-        void persistCurrentScene();
+        void persistCurrentScene(UBDocumentProxy *pProxy = 0);
         void showNewVersionAvailable(bool automatic, const UBVersion &installedVersion, const UBSoftwareUpdate &softwareUpdate);
         void setBoxing(QRect displayRect);
         void setToolbarTexts();
@@ -166,13 +175,17 @@ class UBBoardController : public UBDocumentContainer
 
         void moveSceneToIndex(int source, int target);
         void duplicateScene(int index);
-        UBGraphicsItem *duplicateItem(UBItem *item, bool bAsync = true);
+        UBGraphicsItem *duplicateItem(UBItem *item, bool bAsync = true, eItemActionType actionType = eItemActionType_Default);
         void deleteScene(int index);
+        void regenerateThumbnails();
 
         bool cacheIsVisible() {return mCacheWidgetIsEnabled;}
 
         QString actionGroupText(){ return mActionGroupText;}
         QString actionUngroupText(){ return mActionUngroupText;}
+        void setDocumentNavigator(UBDocumentNavigator *navigator){mDocumentNavigator = navigator;}
+        UBDocumentNavigator *documentNavigator() const {return mDocumentNavigator;}
+
 
     public slots:
         void showDocumentsDialog();
@@ -203,7 +216,7 @@ class UBBoardController : public UBDocumentContainer
         void downloadURL(const QUrl& url, QString contentSourceUrl = QString(), const QPointF& pPos = QPointF(0.0, 0.0), const QSize& pSize = QSize(), bool isBackground = false, bool internalData = false);
         UBItem *downloadFinished(bool pSuccess, QUrl sourceUrl, QUrl contentUrl, QString pHeader,
                                  QByteArray pData, QPointF pPos, QSize pSize,
-                                 bool isBackground = false, bool internalData = false);
+                                 bool isSyncOperation = true, bool isBackground = false, bool internalData = false, eItemActionType actionType = eItemActionType_Default);
         void changeBackground(bool isDark, bool isCrossed);
         void setToolCursor(int tool);
         void showMessage(const QString& message, bool showSpinningWheel = false);
@@ -224,7 +237,7 @@ class UBBoardController : public UBDocumentContainer
         void cut();
         void copy();
         void paste();
-        void processMimeData(const QMimeData* pMimeData, const QPointF& pPos);
+        void processMimeData(const QMimeData* pMimeData, const QPointF& pPos, eItemActionType actionType = eItemActionType_Default);
         void moveGraphicsWidgetToControlView(UBGraphicsWidgetItem* graphicWidget);
         void moveToolWidgetToScene(UBToolWidget* toolWidget);
         void addItem();
@@ -278,6 +291,7 @@ class UBBoardController : public UBDocumentContainer
         UBBoardView *mControlView;
         UBBoardView *mDisplayView;
         QWidget *mControlContainer;
+        UBDocumentNavigator *mDocumentNavigator;
         QHBoxLayout *mControlLayout;
         qreal mZoomFactor;
         bool mIsClosing;

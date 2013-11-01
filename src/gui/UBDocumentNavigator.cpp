@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2012 Webdoc SA
+ * Copyright (C) 2010-2013 Groupement d'Intérêt Public pour l'Education Numérique en Afrique (GIP ENA)
  *
  * This file is part of Open-Sankoré.
  *
  * Open-Sankoré is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License,
+ * the Free Software Foundation, version 3 of the License,
  * with a specific linking exception for the OpenSSL project's
  * "OpenSSL" library (or with modified versions of it that use the
  * same license as the "OpenSSL" library).
@@ -18,6 +18,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 
 #include <QList>
@@ -38,6 +39,9 @@
 #include "domain/UBGraphicsScene.h"
 #include "board/UBBoardPaletteManager.h"
 #include "core/UBApplicationController.h"
+
+#include "gui/UBDockTeacherGuideWidget.h"
+#include "gui/UBTeacherGuideWidget.h"
 
 #include "core/memcheck.h"
 
@@ -60,6 +64,7 @@ UBDocumentNavigator::UBDocumentNavigator(QWidget *parent, const char *name):QGra
 
     setFrameShadow(QFrame::Plain);
 
+    UBApplication::boardController->setDocumentNavigator(this);
     connect(UBApplication::boardController, SIGNAL(documentThumbnailsUpdated(UBDocumentContainer*)), this, SLOT(generateThumbnails(UBDocumentContainer*)));
     connect(UBApplication::boardController, SIGNAL(documentPageUpdated(int)), this, SLOT(updateSpecificThumbnail(int)));
     connect(UBApplication::boardController, SIGNAL(pageSelectionChanged(int)), this, SLOT(onScrollToSelectedPage(int)));
@@ -77,24 +82,20 @@ UBDocumentNavigator::~UBDocumentNavigator()
     }
 }
 
-#include "gui/UBDockTeacherGuideWidget.h"
-#include "gui/UBTeacherGuideWidget.h"
-
 /**
  * \brief Generate the thumbnails
  */
 void UBDocumentNavigator::generateThumbnails(UBDocumentContainer* source)
 {
-
-	mThumbsWithLabels.clear();
-	foreach(QGraphicsItem* it, mScene->items())
+    mThumbsWithLabels.clear();
+    foreach(QGraphicsItem* it, mScene->items())
     {
         mScene->removeItem(it);
         delete it;
         it = NULL;
     }
 
-    for(int i = 0; i < source->selectedDocument()->pageCount(); i++)
+    for(int i = 0; i < source->pageCount(); i++)
     {
         const QPixmap* pix = source->pageAt(i);
         Q_ASSERT(!pix->isNull());
@@ -105,15 +106,17 @@ void UBDocumentNavigator::generateThumbnails(UBDocumentContainer* source)
         QString label = pageIndex == 0 ? tr("Title page") : tr("Page %0").arg(pageIndex);
         UBThumbnailTextItem *labelItem = new UBThumbnailTextItem(label);
 
-		UBImgTextThumbnailElement thumbWithText(pixmapItem, labelItem);
-		thumbWithText.setBorder(border());
-		mThumbsWithLabels.append(thumbWithText);
+        pixmapItem->setLabel(labelItem);
 
-		mScene->addItem(pixmapItem);
-		mScene->addItem(labelItem);
+        UBImgTextThumbnailElement thumbWithText(pixmapItem, labelItem);
+        thumbWithText.setBorder(border());
+        mThumbsWithLabels.append(thumbWithText);
+
+        mScene->addItem(pixmapItem);
+        mScene->addItem(labelItem);
     }
-    
-	// Draw the items
+
+    // Draw the items
     refreshScene();
 }
 
@@ -172,9 +175,16 @@ void UBDocumentNavigator::refreshScene()
         UBImgTextThumbnailElement& item = mThumbsWithLabels[i];
         int columnIndex = i % mNbColumns;
         int rowIndex = i / mNbColumns;
-		item.Place(rowIndex, columnIndex, mThumbnailWidth, thumbnailHeight);
+        item.Place(rowIndex, columnIndex, mThumbnailWidth, thumbnailHeight);
+        item.getCaption()->highlight(false);
     }
     scene()->setSceneRect(scene()->itemsBoundingRect());
+
+    if (mThumbsWithLabels.count() > UBApplication::boardController->activeSceneIndex())
+    {
+        mThumbsWithLabels.at(UBApplication::boardController->activeSceneIndex()).getThumbnail()->setSelected(true);
+        mThumbsWithLabels.at(UBApplication::boardController->activeSceneIndex()).getCaption()->highlight(true);
+    }
 }
 
 /**
@@ -254,32 +264,32 @@ void UBDocumentNavigator::mousePressEvent(QMouseEvent *event)
         {
             // If we fall here we may have clicked on the label instead of the thumbnail
             UBThumbnailTextItem* pTextItem = dynamic_cast<UBThumbnailTextItem*>(pClickedItem);
-            if(NULL != pTextItem) 
+            if(NULL != pTextItem)
             {
                 for(int i = 0; i < mThumbsWithLabels.size(); i++)
-				{
-					const UBImgTextThumbnailElement& el = mThumbsWithLabels.at(i);
-					if(el.getCaption() == pTextItem)
-					{
-						pCrntItem = el.getThumbnail();
-						break;
-					}
-				}
+                {
+                    const UBImgTextThumbnailElement& el = mThumbsWithLabels.at(i);
+                    if(el.getCaption() == pTextItem)
+                    {
+                        pCrntItem = el.getThumbnail();
+                        break;
+                    }
+                }
             }
         }
 
         int index = 0;
-		for(int i = 0; i < mThumbsWithLabels.size(); i++)
+        for(int i = 0; i < mThumbsWithLabels.size(); i++)
         {
-		    if (mThumbsWithLabels.at(i).getThumbnail() == pCrntItem)
+            if (mThumbsWithLabels.at(i).getThumbnail() == pCrntItem)
             {
                 index = i;
                 break;
             }
         }
         UBApplication::boardController->setActiveDocumentScene(index);
-	}
-	QGraphicsView::mousePressEvent(event);
+    }
+    QGraphicsView::mousePressEvent(event);
 }
 
 void UBDocumentNavigator::mouseReleaseEvent(QMouseEvent *event)

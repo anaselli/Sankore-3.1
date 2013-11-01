@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2012 Webdoc SA
+ * Copyright (C) 2010-2013 Groupement d'Intérêt Public pour l'Education Numérique en Afrique (GIP ENA)
  *
  * This file is part of Open-Sankoré.
  *
  * Open-Sankoré is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License,
+ * the Free Software Foundation, version 3 of the License,
  * with a specific linking exception for the OpenSSL project's
  * "OpenSSL" library (or with modified versions of it that use the
  * same license as the "OpenSSL" library).
@@ -19,7 +19,6 @@
  * along with Open-Sankoré.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include "UBThumbnailAdaptor.h"
 
 #include <QtCore>
@@ -30,7 +29,6 @@
 #include "core/UBApplication.h"
 #include "core/UBSettings.h"
 
-
 #include "gui/UBDockTeacherGuideWidget.h"
 #include "gui/UBTeacherGuideWidget.h"
 
@@ -38,11 +36,8 @@
 #include "board/UBBoardPaletteManager.h"
 
 #include "document/UBDocumentProxy.h"
-
 #include "domain/UBGraphicsScene.h"
-
 #include "UBSvgSubsetAdaptor.h"
-
 #include "core/memcheck.h"
 
 void UBThumbnailAdaptor::generateMissingThumbnails(UBDocumentProxy* proxy)
@@ -117,13 +112,20 @@ void UBThumbnailAdaptor::updateDocumentToHandleZeroPage(UBDocumentProxy* proxy)
 void UBThumbnailAdaptor::load(UBDocumentProxy* proxy, QList<const QPixmap*>& list)
 {
     updateDocumentToHandleZeroPage(proxy);
-	generateMissingThumbnails(proxy);
+    generateMissingThumbnails(proxy);
 
     foreach(const QPixmap* pm, list)
         delete pm;
     list.clear();
-    for(int i=0; i<proxy->pageCount(); i++)
+    for(int i=0; proxy && i<proxy->pageCount(); i++)
         list.append(get(proxy, i));
+}
+
+void UBThumbnailAdaptor::clearThumbs(QList<const QPixmap *> &list)
+{
+    foreach(const QPixmap* pm, list)
+        delete pm;
+    list.clear();
 }
 
 void UBThumbnailAdaptor::persistScene(UBDocumentProxy* proxy, UBGraphicsScene* pScene, int pageIndex, bool overrideModified)
@@ -159,7 +161,6 @@ void UBThumbnailAdaptor::persistScene(UBDocumentProxy* proxy, UBGraphicsScene* p
             painter.fillRect(imageRect, Qt::white);
         }
 
-        pScene->setRenderingContext(UBGraphicsScene::NonScreen);
         pScene->setRenderingQuality(UBItem::RenderingQualityHigh);
 
         pScene->render(&painter, imageRect, sceneRect, Qt::KeepAspectRatio);
@@ -170,7 +171,6 @@ void UBThumbnailAdaptor::persistScene(UBDocumentProxy* proxy, UBGraphicsScene* p
             painter.drawPixmap(QPoint(width - toque.width(),0),toque);
         }
 
-        pScene->setRenderingContext(UBGraphicsScene::Screen);
         pScene->setRenderingQuality(UBItem::RenderingQualityNormal);
 
         thumb.scaled(width, height, Qt::KeepAspectRatio, Qt::SmoothTransformation).save(fileName, "JPG");

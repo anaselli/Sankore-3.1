@@ -179,7 +179,7 @@ else
     LAST_COMMITED_VERSION="`git describe $(git rev-list --tags --max-count=1)`"
     if [ "v$VERSION" != "$LAST_COMMITED_VERSION" ]; then
         if [ $MAKE_TAG == true ]; then
-            git tag -a "v$VERSION" -m "Generating setup for v$VERSION"
+            git tag -a "v${VERSION}" -m "Generating setup for v$VERSION"
             git push origin --tags
         fi 
     fi
@@ -195,6 +195,9 @@ cp -R $PLUGINS_PATH $PRODUCT_PATH/
 
 # copying customization
 cp -R resources/customizations $PRODUCT_PATH/
+
+# copying startup hints
+cp -R resources/startupHints $PRODUCT_PATH/
 
 if [ $STANDARD_QT_USED == false ]; then 
 #copying custom qt library
@@ -375,19 +378,19 @@ chmod 755 "$BASE_WORKING_DIR/DEBIAN/postint"
 mkdir -p "install/linux"
 DEBIAN_PACKAGE_NAME="Open-Sankore_${VERSION}_$ARCHITECTURE.deb"
 
-fakeroot  chown -R root:root $BASE_WORKING_DIR 
+chown -R root:root $BASE_WORKING_DIR 
 dpkg -b "$BASE_WORKING_DIR" "install/linux/$DEBIAN_PACKAGE_NAME"
 notifyProgress "Open-Sankore" "Package built"
 
 #clean up mess
-fakeroot rm -rf $BASE_WORKING_DIR
+rm -rf $BASE_WORKING_DIR
 
 
 if [ $CREATE_DIENA_DISTRIBUTION_ZIP == true ]; then
 
     ZIP_NAME="Open-Sankoré_`lsb_release -is`_`lsb_release -rs`_${VERSION}_${ARCHITECTURE}.zip"
     cd install/linux
-    $ZIP_PATH -1 --junk-paths ${ZIP_NAME} ${DEBIAN_PACKAGE_NAME} ../../ReleaseNotes.pdf ../../JournalDesModifications.pdf
+    $ZIP_PATH -1 --junk-paths ${ZIP_NAME} ${DEBIAN_PACKAGE_NAME} ../../ReleaseNotes.pdf ../../JournalDesModifications.pdf ../../LICENSE.txt
     cd -
     notifyProgress "Open-Sankore" "Build Diena zip file for distribution"
 fi

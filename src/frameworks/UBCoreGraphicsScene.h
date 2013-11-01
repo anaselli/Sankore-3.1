@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2012 Webdoc SA
+ * Copyright (C) 2010-2013 Groupement d'Intérêt Public pour l'Education Numérique en Afrique (GIP ENA)
  *
  * This file is part of Open-Sankoré.
  *
  * Open-Sankoré is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License,
+ * the Free Software Foundation, version 3 of the License,
  * with a specific linking exception for the OpenSSL project's
  * "OpenSSL" library (or with modified versions of it that use the
  * same license as the "OpenSSL" library).
@@ -20,6 +20,7 @@
  */
 
 
+
 #ifndef UBCOREGRAPHICSSCENE_H_
 #define UBCOREGRAPHICSSCENE_H_
 
@@ -27,6 +28,8 @@
 
 class UBCoreGraphicsScene : public QGraphicsScene
 {
+    Q_OBJECT
+
     public:
         UBCoreGraphicsScene(QObject * parent = 0);
         virtual ~UBCoreGraphicsScene();

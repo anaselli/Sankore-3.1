@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2012 Webdoc SA
+ * Copyright (C) 2010-2013 Groupement d'Intérêt Public pour l'Education Numérique en Afrique (GIP ENA)
  *
  * This file is part of Open-Sankoré.
  *
  * Open-Sankoré is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License,
+ * the Free Software Foundation, version 3 of the License,
  * with a specific linking exception for the OpenSSL project's
  * "OpenSSL" library (or with modified versions of it that use the
  * same license as the "OpenSSL" library).
@@ -20,6 +20,7 @@
  */
 
 
+
 #include "UBGraphicsSvgItem.h"
 
 #include <QtGui>
@@ -27,6 +28,15 @@
 #include "UBGraphicsScene.h"
 #include "UBGraphicsItemDelegate.h"
 #include "UBGraphicsPixmapItem.h"
+
+#include "document/UBDocumentProxy.h"
+#include "core/UBApplication.h"
+#include "document/UBDocumentController.h"
+#include "board/UBBoardController.h"
+#include "document/UBDocumentProxy.h"
+#include "customWidgets/UBGraphicsItemAction.h"
+#include "frameworks/UBFileSystemUtils.h"
+#include "core/UBPersistenceManager.h"
 
 #include "core/memcheck.h"
 
@@ -64,6 +74,7 @@ void UBGraphicsSvgItem::init()
     Delegate()->init();
     Delegate()->setFlippable(true);
     Delegate()->setRotatable(true);
+    Delegate()->setCanTrigAnAction(true);
 
 
     setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
@@ -97,6 +108,16 @@ QVariant UBGraphicsSvgItem::itemChange(GraphicsItemChange change, const QVariant
 
 void UBGraphicsSvgItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
+    QMimeData* pMime = new QMimeData();
+    QPixmap pixmap = toPixmapItem()->pixmap();
+    pMime->setImageData(pixmap.toImage());
+    Delegate()->setMimeData(pMime);
+    qreal k = (qreal)pixmap.width() / 100.0;
+
+    QSize newSize((int)(pixmap.width() / k), (int)(pixmap.height() / k));
+
+    Delegate()->setDragPixmap(pixmap.scaled(newSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
+
     if (Delegate()->mousePressEvent(event))
     {
         //NOOP
@@ -164,6 +185,15 @@ void UBGraphicsSvgItem::copyItemParameters(UBItem *copy) const
         cp->setData(UBGraphicsItemData::ItemLayerType, this->data(UBGraphicsItemData::ItemLayerType));
         cp->setData(UBGraphicsItemData::ItemLocked, this->data(UBGraphicsItemData::ItemLocked));
         cp->setSourceUrl(this->sourceUrl());
+        if(Delegate()->action()){
+            if(Delegate()->action()->linkType() == eLinkToAudio){
+                UBGraphicsItemPlayAudioAction* audioAction = dynamic_cast<UBGraphicsItemPlayAudioAction*>(Delegate()->action());
+                UBGraphicsItemPlayAudioAction* action = new UBGraphicsItemPlayAudioAction(audioAction->fullPath());
+                cp->Delegate()->setAction(action);
+            }
+            else
+                cp->Delegate()->setAction(Delegate()->action());
+        }
     }
 }
 
